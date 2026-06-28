@@ -1,0 +1,160 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  email     String    @unique
+  password  String
+  bio       String?   @db.Text
+  avatarId  String?   @map("avatar_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  avatar   Media?    @relation("UserAvatar", fields: [avatarId], references: [id])
+  posts    Post[]
+  savedPosts SavedPost[]
+  sentMsgs Message[] @relation("SentMessages")
+  rcvdMsgs Message[] @relation("ReceivedMessages")
+  uploads  Media[]   @relation("UploadedMedia")
+
+  @@map("users")
+}
+
+enum PostStatus {
+  /// Borrador en creación/edición. No visible al público. Cuenta para el límite de 5 borradores activos.
+  DRAFT
+  /// Publicación activa e inmediatamente visible en la tienda/galería pública.
+  PUBLISHED
+  /// Producto vendido. Visible para consultas históricas y chats, pero no disponible para compra.
+  SOLD
+  /// Publicación pausada temporalmente. Oculta al público, no cuenta para el límite de 5 borradores.
+  ARCHIVED
+}
+
+enum PostCondition {
+  NEW
+  USED
+}
+
+model Post {
+  id          String     @id @default(uuid()) @db.Uuid
+  userId      String     @map("user_id") @db.Uuid
+  cityId      Int        @map("city_id")
+  title       String
+  description String     @db.Text
+  price       Decimal    @db.Decimal(12, 2)
+  latitude    Decimal?   @db.Decimal(9, 6)
+  longitude   Decimal?   @db.Decimal(9, 6)
+  /// Estado actual del post. Ver enum PostStatus para reglas de negocio de cada estado.
+  status      PostStatus @default(PUBLISHED)
+  condition   PostCondition @default(USED)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city     City        @relation(fields: [cityId], references: [id])
+  media    PostMedia[]
+  savedBy  SavedPost[]
+  messages Message[]
+
+  @@map("posts")
+}
+
+enum MediaContext {
+  AVATAR
+  POST
+}
+
+model Media {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  url       String
+  context   MediaContext
+  placeholder String?
+  width     Int?
+  height    Int?
+  size      Int?
+  mimeType  String?  @map("mime_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  posts     PostMedia[]
+
+  uploader User   @relation("UploadedMedia", fields: [userId], references: [id], onDelete: Cascade)
+  usersAvatar User[] @relation("UserAvatar")
+
+  @@map("media")
+}
+
+model PostMedia {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  mediaId   String   @map("media_id") @db.Uuid
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mediaId])
+  @@map("post_media")
+}
+
+model SavedPost {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("saved_posts")
+}
+
+model Message {
+  id         String   @id @default(uuid()) @db.Uuid
+  senderId   String   @map("sender_id") @db.Uuid
+  receiverId String   @map("receiver_id") @db.Uuid
+  postId     String   @map("post_id") @db.Uuid
+  content    String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Region {
+  id          Int    @id
+  name        String
+  shortName   String @map("short_name")
+  romanNumber String @map("roman_number")
+  cities      City[]
+
+  @@map("regions")
+}
+
+model City {
+  id               Int     @id
+  regionId         Int     @map("region_id")
+  name             String
+  latitudeDefault  Decimal @map("latitude_default") @db.Decimal(9, 6)
+  longitudeDefault Decimal @map("longitude_default") @db.Decimal(9, 6)
+  posts            Post[]
+
+  region Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  @@map("cities")
+}
