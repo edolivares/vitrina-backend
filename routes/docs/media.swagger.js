@@ -25,7 +25,7 @@ export const mediaPaths = {
   },
   "/api/posts/{postId}/media": {
     post: {
-      summary: "Vincular multimedia a publicación",
+      summary: "Subir imagen y vincularla a una publicacion",
       tags: ["Multimedia"],
       security: [{ BearerAuth: [] }],
       parameters: [
@@ -34,6 +34,16 @@ export const mediaPaths = {
       requestBody: {
         required: true,
         content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              required: ["file"],
+              properties: {
+                file: { type: "string", format: "binary" },
+                sortOrder: { type: "integer", default: 0 },
+              },
+            },
+          },
           "application/json": {
             schema: {
               type: "object",
@@ -47,7 +57,9 @@ export const mediaPaths = {
         },
       },
       responses: {
-        200: { description: "Vínculo creado" },
+        201: { description: "Imagen subida y vinculada" },
+        200: { description: "Media existente vinculada" },
+        409: { description: "Limite de imagenes alcanzado" },
       },
     },
   },

@@ -6,6 +6,7 @@ import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
 
 const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+const MAX_POST_IMAGES = 5;
 
 export const uploadImage = async ({ fileBuffer, userId, context }) => {
   // Asegurar que la carpeta uploads exista
@@ -90,6 +91,27 @@ export const linkMediaToPost = async ({ postId, mediaId, sortOrder = 0, userId }
   if (media.userId !== userId) {
     const err = new Error("No estás autorizado para usar este archivo multimedia");
     err.statusCode = 403;
+    throw err;
+  }
+
+  if (media.context !== "POST") {
+    const err = new Error("Solo se pueden vincular imagenes de publicacion a un post");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const existingImages = await prisma.postMedia.count({
+    where: {
+      postId,
+      mediaId: {
+        not: mediaId,
+      },
+    },
+  });
+
+  if (existingImages >= MAX_POST_IMAGES) {
+    const err = new Error(`La publicacion no puede tener mas de ${MAX_POST_IMAGES} imagenes`);
+    err.statusCode = 409;
     throw err;
   }
 

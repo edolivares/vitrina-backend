@@ -1,6 +1,7 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { config } from "../lib/config.js";
+import { parseMultipart } from "../lib/multipart.js";
 import {
   createDraft,
   updatePost,
@@ -11,7 +12,8 @@ import {
   archivePost,
   reactivatePost,
 } from "../services/posts.service.js";
-import { linkMediaToPost } from "../services/media.service.js";
+import { linkMediaToPost, uploadImage } from "../services/media.service.js";
+import { createOrGetPostChat, listPostChats } from "../services/messages.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { validateBody, validateParams } from "../middlewares/validate.middleware.js";
 import { linkMediaSchema } from "../schemas/media.schema.js";
@@ -90,10 +92,55 @@ router.get("/", async (req, res, next) => {
 });
 
 // 4. Vincular media a post
-router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema), validateBody(linkMediaSchema), async (req, res, next) => {
+router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
   try {
     const postId = req.validatedParams.postId;
-    const { mediaId, sortOrder } = req.validatedBody;
+    const contentType = req.headers["content-type"] || "";
+
+    if (contentType.includes("multipart/form-data")) {
+      const parsed = await parseMultipart(req);
+      const file = parsed.files.file;
+      const sortOrder = parsed.fields.sortOrder ? Number(parsed.fields.sortOrder) : 0;
+
+      if (!file) {
+        return res.status(400).json({
+          status: "error",
+          message: "No se proporciono ningun archivo de imagen en el campo 'file'",
+        });
+      }
+
+      const media = await uploadImage({
+        fileBuffer: file.buffer,
+        userId: req.user.id,
+        context: "POST",
+      });
+
+      const association = await linkMediaToPost({
+        postId,
+        mediaId: media.id,
+        sortOrder,
+        userId: req.user.id,
+      });
+
+      return res.status(201).json({
+        status: "success",
+        message: "Imagen subida y vinculada correctamente a la publicacion",
+        data: {
+          id: media.id,
+          postId,
+          url: media.url,
+          placeholder: media.placeholder,
+          width: media.width,
+          height: media.height,
+          size: media.size,
+          mimeType: media.mimeType,
+          context: media.context,
+          sortOrder: association.sortOrder,
+        },
+      });
+    }
+
+    const { mediaId, sortOrder } = linkMediaSchema.parse(req.body);
 
     await linkMediaToPost({
       postId,
@@ -104,7 +151,33 @@ router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema),
 
     res.status(200).json({
       status: "success",
-      message: "Archivo multimedia vinculado correctamente a la publicación",
+      message: "Archivo multimedia vinculado correctamente a la publicacion",
+    });
+  } catch (error) {
+    if (error.errors) {
+      return res.status(400).json({
+        status: "error",
+        message: "Error de validacion",
+        details: error.errors.map((e) => e.message),
+      });
+    }
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+});
+
+// 5. Detalle de publicación (Acceso condicional / público)
+router.post("/:postId/chats", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
+  try {
+    const result = await createOrGetPostChat(req.validatedParams.postId, req.user.id);
+    res.status(result.created ? 201 : 200).json({
+      status: "success",
+      data: result.chat,
     });
   } catch (error) {
     if (error.statusCode) {
@@ -117,7 +190,24 @@ router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema),
   }
 });
 
-// 5. Detalle de publicación (Acceso condicional / público)
+router.get("/:postId/chats", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
+  try {
+    const chats = await listPostChats(req.validatedParams.postId, req.user.id);
+    res.status(200).json({
+      status: "success",
+      data: chats,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+});
+
 router.get("/:id", validateParams(uuidParamSchema), async (req, res, next) => {
   try {
     const postId = req.validatedParams.id;

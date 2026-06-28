@@ -11,6 +11,8 @@ import locationRoutes from "./routes/location.routes.js";
 import postRoutes from "./routes/posts.routes.js";
 import mediaRoutes from "./routes/media.routes.js";
 import savedRoutes from "./routes/saved.routes.js";
+import messageRoutes from "./routes/messages.routes.js";
+import profileRoutes from "./routes/profiles.routes.js";
 
 const app = express();
 
@@ -34,6 +36,8 @@ app.use("/api/locations", locationRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/saved-posts", savedRoutes);
+app.use("/api/chats", messageRoutes);
+app.use("/api/profiles", profileRoutes);
 
 // API placeholder route
 app.get("/", (req, res) => {

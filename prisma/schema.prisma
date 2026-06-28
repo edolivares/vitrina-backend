@@ -23,7 +23,8 @@ model User {
   posts    Post[]
   savedPosts SavedPost[]
   sentMsgs Message[] @relation("SentMessages")
-  rcvdMsgs Message[] @relation("ReceivedMessages")
+  sellerChats Chat[] @relation("SellerChats")
+  buyerChats Chat[] @relation("BuyerChats")
   uploads  Media[]   @relation("UploadedMedia")
 
   @@map("users")
@@ -65,7 +66,7 @@ model Post {
   city     City        @relation(fields: [cityId], references: [id])
   media    PostMedia[]
   savedBy  SavedPost[]
-  messages Message[]
+  chats    Chat[]
 
   @@map("posts")
 }
@@ -121,17 +122,35 @@ model SavedPost {
   @@map("saved_posts")
 }
 
-model Message {
-  id         String   @id @default(uuid()) @db.Uuid
-  senderId   String   @map("sender_id") @db.Uuid
-  receiverId String   @map("receiver_id") @db.Uuid
-  postId     String   @map("post_id") @db.Uuid
-  content    String   @db.Text
-  createdAt  DateTime @default(now()) @map("created_at")
+model Chat {
+  id          String   @id @default(uuid()) @db.Uuid
+  postId      String   @map("post_id") @db.Uuid
+  sellerId    String   @map("seller_id") @db.Uuid
+  buyerId     String   @map("buyer_id") @db.Uuid
+  lastMessage String?  @map("last_message") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  post     Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post     Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  seller   User      @relation("SellerChats", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer    User      @relation("BuyerChats", fields: [buyerId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([postId, buyerId])
+  @@index([sellerId])
+  @@index([buyerId])
+  @@map("chats")
+}
+
+model Message {
+  id        String   @id @default(uuid()) @db.Uuid
+  chatId    String   @map("chat_id") @db.Uuid
+  senderId  String   @map("sender_id") @db.Uuid
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }

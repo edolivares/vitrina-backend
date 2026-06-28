@@ -152,7 +152,16 @@ vi.mock("../services/posts.service.js", () => {
 });
 
 vi.mock("../services/media.service.js", () => ({
-  uploadImage: vi.fn(),
+  uploadImage: vi.fn(async () => ({
+    id: "77a8b9c0-d1e2-3f4a-5b6c-7d8e9f0a1b2c",
+    url: "http://localhost:4000/uploads/test.webp",
+    placeholder: "data:image/webp;base64,test",
+    width: 800,
+    height: 600,
+    size: 1024,
+    mimeType: "image/webp",
+    context: "POST",
+  })),
   linkMediaToPost: vi.fn(async () => ({})),
   deleteMedia: vi.fn(),
 }));
@@ -244,6 +253,22 @@ describe("Publicaciones REST API (Mocked)", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
+  });
+
+  it("Deberia subir y vincular imagen directamente desde la ruta canonica de publicaciones", async () => {
+    const res = await request(app)
+      .post(`/api/posts/${firstPostId}/media`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("sortOrder", "0")
+      .attach("file", Buffer.from("fake-image"), {
+        filename: "foto.webp",
+        contentType: "image/webp",
+      });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.status).toBe("success");
+    expect(res.body.data.id).toBe("77a8b9c0-d1e2-3f4a-5b6c-7d8e9f0a1b2c");
+    expect(res.body.data.postId).toBe(firstPostId);
   });
 
   it("No debería exponer la vinculación de media bajo /api/media", async () => {
