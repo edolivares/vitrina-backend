@@ -29,6 +29,11 @@ export const registerRateLimiter = createJsonRateLimiter({
   message: "Demasiados registros desde este origen. Intenta nuevamente mas tarde.",
 });
 
+export const refreshRateLimiter = createJsonRateLimiter({
+  ...config.rateLimit.refresh,
+  message: "Demasiadas renovaciones de sesion. Intenta nuevamente en unos minutos.",
+});
+
 export const mediaRateLimiter = createJsonRateLimiter({
   ...config.rateLimit.media,
   message: "Demasiadas cargas de imagenes. Intenta nuevamente en unos minutos.",

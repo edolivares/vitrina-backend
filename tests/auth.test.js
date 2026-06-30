@@ -14,7 +14,8 @@ vi.mock("../lib/database.js", () => ({
     media: { create: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     postMedia: { upsert: vi.fn(), deleteMany: vi.fn() },
     savedPost: { upsert: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
-    message: { deleteMany: vi.fn() }
+    message: { deleteMany: vi.fn() },
+    refreshToken: { create: vi.fn(), findUnique: vi.fn(), updateMany: vi.fn() },
   }
 }));
 
@@ -44,6 +45,7 @@ vi.mock("../services/auth.service.js", () => {
       );
       return {
         token,
+        refreshToken: "mock-refresh-token",
         user: {
           id: "test-uuid-123",
           name: "Juan Pérez Test",
@@ -52,6 +54,30 @@ vi.mock("../services/auth.service.js", () => {
         },
       };
     }),
+    refreshAccessToken: vi.fn(async (refreshToken) => {
+      if (!refreshToken) {
+        const error = new Error("Refresh token no proporcionado");
+        error.statusCode = 401;
+        throw error;
+      }
+
+      const token = jwt.sign(
+        { id: "test-uuid-123", email: "juan.test@email.com" },
+        config.jwt.secret || "testsecret",
+        { expiresIn: "15m" }
+      );
+
+      return {
+        token,
+        user: {
+          id: "test-uuid-123",
+          name: "Juan PÃ©rez Test",
+          email: "juan.test@email.com",
+          avatarId: null,
+        },
+      };
+    }),
+    logoutUser: vi.fn(async () => undefined),
     getUserProfile: vi.fn(async (userId) => {
       if (userId !== "test-uuid-123") {
         throw new Error("Usuario no encontrado");
@@ -122,8 +148,39 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
     expect(res.body).toHaveProperty("token");
+    expect(res.headers["set-cookie"]?.[0]).toContain("refreshToken=mock-refresh-token");
+    expect(res.headers["set-cookie"]?.[0]).toContain("HttpOnly");
     expect(res.body.data.email).toBe(testUser.email);
     token = res.body.token;
+  });
+
+  it("DeberÃ­a renovar el token usando refresh token en cookie", async () => {
+    const res = await request(app)
+      .post("/api/auth/refresh")
+      .set("Cookie", ["refreshToken=mock-refresh-token"]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body).toHaveProperty("token");
+    expect(res.body.data.email).toBe("juan.test@email.com");
+  });
+
+  it("DeberÃ­a denegar refresh sin cookie", async () => {
+    const res = await request(app).post("/api/auth/refresh");
+
+    expect(res.statusCode).toBe(401);
+    expect(res.body.status).toBe("error");
+  });
+
+  it("DeberÃ­a cerrar sesiÃ³n limpiando la cookie de refresh token", async () => {
+    const res = await request(app)
+      .post("/api/auth/logout")
+      .set("Cookie", ["refreshToken=mock-refresh-token"]);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.headers["set-cookie"]?.[0]).toContain("refreshToken=");
+    expect(res.headers["set-cookie"]?.[0]).toContain("Expires=Thu, 01 Jan 1970");
   });
 
   it("Debería fallar al iniciar sesión con contraseña incorrecta", async () => {

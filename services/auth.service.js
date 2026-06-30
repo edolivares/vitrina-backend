@@ -1,7 +1,41 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
+
+const createAccessToken = (user) => jwt.sign(
+  { id: user.id, email: user.email },
+  config.jwt.secret,
+  { expiresIn: config.jwt.accessTokenExpiresIn }
+);
+
+const hashRefreshToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
+
+const createRefreshTokenRecord = async (userId) => {
+  const refreshToken = crypto.randomBytes(64).toString("hex");
+  const tokenHash = hashRefreshToken(refreshToken);
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + config.jwt.refreshTokenExpiresInDays);
+
+  await prisma.refreshToken.create({
+    data: {
+      userId,
+      tokenHash,
+      expiresAt,
+    },
+  });
+
+  return refreshToken;
+};
+
+const toAuthUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  bio: user.bio,
+  avatarId: user.avatarId,
+});
 
 export const registerUser = async ({ name, email, password }) => {
   const existingUser = await prisma.user.findUnique({
@@ -49,22 +83,55 @@ export const loginUser = async ({ email, password }) => {
     throw new Error("Correo o contraseña incorrectos");
   }
 
-  const token = jwt.sign(
-    { id: user.id, email: user.email },
-    config.jwt.secret,
-    { expiresIn: "7d" }
-  );
+  const token = createAccessToken(user);
+  const refreshToken = await createRefreshTokenRecord(user.id);
 
   return {
     token,
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      bio: user.bio,
-      avatarId: user.avatarId,
-    },
+    refreshToken,
+    user: toAuthUser(user),
   };
+};
+
+export const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    const error = new Error("Refresh token no proporcionado");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  const tokenHash = hashRefreshToken(refreshToken);
+  const storedToken = await prisma.refreshToken.findUnique({
+    where: { tokenHash },
+    include: { user: true },
+  });
+
+  if (!storedToken || storedToken.revokedAt || storedToken.expiresAt <= new Date()) {
+    const error = new Error("Refresh token invalido o expirado");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  return {
+    token: createAccessToken(storedToken.user),
+    user: toAuthUser(storedToken.user),
+  };
+};
+
+export const logoutUser = async (refreshToken) => {
+  if (!refreshToken) {
+    return;
+  }
+
+  await prisma.refreshToken.updateMany({
+    where: {
+      tokenHash: hashRefreshToken(refreshToken),
+      revokedAt: null,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
 };
 
 export const getUserProfile = async (userId) => {

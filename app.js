@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
@@ -10,6 +11,7 @@ import {
   loginRateLimiter,
   mediaRateLimiter,
   privateWriteRateLimiter,
+  refreshRateLimiter,
   registerRateLimiter,
 } from "./middlewares/rate-limit.middleware.js";
 
@@ -38,6 +40,7 @@ const corsOptions = {
 
 // Middlewares
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
@@ -54,6 +57,8 @@ if (config.server.env !== "production") {
 app.use("/api", apiRateLimiter);
 app.use("/api/auth/login", loginRateLimiter);
 app.use("/api/auth/register", registerRateLimiter);
+app.use("/api/auth/refresh", refreshRateLimiter);
+app.use("/api/auth/logout", privateWriteRateLimiter);
 app.use("/api/media/upload", mediaRateLimiter);
 app.use("/api/posts/:postId/media", mediaRateLimiter);
 app.use("/api/posts", privateWriteRateLimiter);
@@ -85,8 +90,10 @@ app.use((req, res) => {
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
   const statusCode = err.statusCode || 500;
+  if (statusCode === 500) {
+    console.error(err.stack);
+  }
   const message = statusCode === 500 ? "Error interno del servidor" : err.message;
   res.status(statusCode).json({ message });
 });

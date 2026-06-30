@@ -62,22 +62,78 @@ export const authPaths = {
       },
       responses: {
         200: {
-          description: "Autenticación exitosa",
+          description: "Autenticación exitosa. Devuelve access token y setea cookie HttpOnly con refresh token.",
+          headers: {
+            "Set-Cookie": {
+              schema: { type: "string" },
+              description: "Cookie refreshToken HttpOnly con duración de 14 días.",
+            },
+          },
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AuthResponse" },
+            },
+          },
+        },
+        401: {
+          description: "Credenciales incorrectas",
+        },
+      },
+    },
+  },
+  "/api/auth/refresh": {
+    post: {
+      summary: "Renovar access token",
+      tags: ["Autenticación"],
+      security: [{ RefreshTokenCookie: [] }],
+      description: "Usa la cookie HttpOnly `refreshToken` para emitir un nuevo access token. El refresh token dura 14 días y se valida contra su hash persistido.",
+      responses: {
+        200: {
+          description: "Access token renovado con éxito",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/AuthResponse" },
+            },
+          },
+        },
+        401: {
+          description: "Refresh token ausente, inválido, expirado o revocado",
+        },
+        429: {
+          description: "Demasiadas renovaciones de sesión",
+        },
+      },
+    },
+  },
+  "/api/auth/logout": {
+    post: {
+      summary: "Cerrar sesión",
+      tags: ["Autenticación"],
+      security: [{ RefreshTokenCookie: [] }],
+      description: "Revoca el refresh token asociado a la cookie actual y limpia la cookie del navegador.",
+      responses: {
+        200: {
+          description: "Sesión cerrada correctamente",
+          headers: {
+            "Set-Cookie": {
+              schema: { type: "string" },
+              description: "Cookie refreshToken expirada para limpiar la sesión.",
+            },
+          },
           content: {
             "application/json": {
               schema: {
                 type: "object",
                 properties: {
                   status: { type: "string", example: "success" },
-                  token: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
-                  data: { $ref: "#/components/schemas/User" },
+                  message: { type: "string", example: "Sesion cerrada correctamente" },
                 },
               },
             },
           },
         },
-        401: {
-          description: "Credenciales incorrectas",
+        429: {
+          description: "Demasiadas acciones realizadas",
         },
       },
     },
