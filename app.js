@@ -5,6 +5,13 @@ import morgan from "morgan";
 import path from "path";
 import { config } from "./lib/config.js";
 import { serveSwagger, setupSwagger } from "./lib/swagger.js";
+import {
+  apiRateLimiter,
+  loginRateLimiter,
+  mediaRateLimiter,
+  privateWriteRateLimiter,
+  registerRateLimiter,
+} from "./middlewares/rate-limit.middleware.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import locationRoutes from "./routes/location.routes.js";
@@ -16,8 +23,21 @@ import profileRoutes from "./routes/profiles.routes.js";
 
 const app = express();
 
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || config.cors.allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    const error = new Error("Origen no permitido por CORS");
+    error.statusCode = 403;
+    return callback(error);
+  },
+  credentials: true,
+};
+
 // Middlewares
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json());
 app.use(morgan("dev"));
@@ -31,6 +51,16 @@ if (config.server.env !== "production") {
 }
 
 // API Routes
+app.use("/api", apiRateLimiter);
+app.use("/api/auth/login", loginRateLimiter);
+app.use("/api/auth/register", registerRateLimiter);
+app.use("/api/media/upload", mediaRateLimiter);
+app.use("/api/posts/:postId/media", mediaRateLimiter);
+app.use("/api/posts", privateWriteRateLimiter);
+app.use("/api/media", privateWriteRateLimiter);
+app.use("/api/saved-posts", privateWriteRateLimiter);
+app.use("/api/chats", privateWriteRateLimiter);
+app.use("/api/auth/me", privateWriteRateLimiter);
 app.use("/api/auth", authRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/posts", postRoutes);
@@ -56,7 +86,9 @@ app.use((req, res) => {
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: "Error interno del servidor" });
+  const statusCode = err.statusCode || 500;
+  const message = statusCode === 500 ? "Error interno del servidor" : err.message;
+  res.status(statusCode).json({ message });
 });
 
 export default app;
