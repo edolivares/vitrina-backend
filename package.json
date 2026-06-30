@@ -10,6 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset --force",
     "db:seed": "node prisma/seed.js"
   },
   "dependencies": {
@@ -30,14 +32,5 @@
     "prisma": "^6.2.1",
     "supertest": "^7.0.0",
     "vitest": "^3.0.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "esbuild",
-      "prisma",
-      "sharp"
-    ]
   }
 }
