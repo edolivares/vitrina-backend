@@ -95,6 +95,7 @@ model Media {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
   url       String
+  path      String?
   context   MediaContext
   placeholder String?
   width     Int?

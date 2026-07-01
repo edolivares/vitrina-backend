@@ -1,11 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
-import app from "../app.js";
-import { config } from "../lib/config.js";
+import app from "../../app.js";
+import { config } from "../../lib/config.js";
 
 // Interceptar lib/database.js para evitar que se importe/inicie el Prisma Client real
-vi.mock("../lib/database.js", () => ({
+vi.mock("../../lib/database.js", () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
@@ -20,7 +20,7 @@ vi.mock("../lib/database.js", () => ({
 }));
 
 // Mock del servicio de autenticación
-vi.mock("../services/auth.service.js", () => {
+vi.mock("../../services/auth.service.js", () => {
   return {
     registerUser: vi.fn(async (data) => {
       if (data.email === "existing@email.com") {
@@ -99,6 +99,21 @@ vi.mock("../services/auth.service.js", () => {
         createdAt: new Date().toISOString(),
       };
     }),
+    uploadUserAvatar: vi.fn(async () => ({
+      id: "test-uuid-123",
+      name: "Juan Pérez Test",
+      email: "juan.test@email.com",
+      avatar: {
+        id: "77a8b9c0-d1e2-3f4a-5b6c-7d8e9f0a1b2c",
+        url: "http://localhost:4000/storage/media/avatars/test-uuid-123/avatar.webp",
+        placeholder: "data:image/webp;base64,test",
+        width: 80,
+        height: 60,
+        size: 1024,
+        mimeType: "image/webp",
+      },
+      createdAt: new Date().toISOString(),
+    })),
   };
 });
 
@@ -221,5 +236,17 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
     expect(res.body.data.name).toBe("Juan Actualizado");
+  });
+
+  it("Debería subir avatar y devolver placeholder base64", async () => {
+    const res = await request(app)
+      .post("/api/auth/me/avatar")
+      .set("Authorization", `Bearer ${token}`)
+      .attach("file", "tests/fixtures/images/sample.svg");
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.status).toBe("success");
+    expect(res.body.data.avatar.url).toContain("/storage/media/avatars/");
+    expect(res.body.data.avatar.placeholder).toMatch(/^data:image\/webp;base64,/);
   });
 });

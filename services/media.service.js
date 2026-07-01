@@ -1,52 +1,80 @@
 import sharp from "sharp";
-import { promises as fs } from "fs";
-import path from "path";
 import crypto from "crypto";
 import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
+import { buildPublicStorageUrl, storageService } from "./storage.service.js";
 
-const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 const MAX_POST_IMAGES = 5;
+const MAX_IMAGE_WIDTH = 1200;
+const WEBP_QUALITY = 80;
 
-export const uploadImage = async ({ fileBuffer, userId, context }) => {
-  // Asegurar que la carpeta uploads exista
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
+const buildMediaPath = ({ context, userId, postId, mediaId }) => {
+  if (context === "AVATAR") {
+    return `avatars/${userId}/${mediaId}.webp`;
+  }
+
+  if (postId) {
+    return `posts/${postId}/${mediaId}.webp`;
+  }
+
+  return `posts/unassigned/${userId}/${mediaId}.webp`;
+};
+
+const getMaxFileSizeBytes = (context) => (
+  context === "AVATAR"
+    ? config.media.avatarMaxFileSizeBytes
+    : config.media.postMaxFileSizeBytes
+);
+
+const validateImageFile = ({ fileBuffer, mimeType, context }) => {
+  if (!config.media.allowedMimeTypes.includes(mimeType)) {
+    const err = new Error("Tipo de archivo no permitido");
+    err.statusCode = 415;
+    throw err;
+  }
+
+  if (fileBuffer.length > getMaxFileSizeBytes(context)) {
+    const err = new Error("El archivo supera el tamano maximo permitido");
+    err.statusCode = 413;
+    throw err;
+  }
+};
+
+export const uploadImage = async ({ fileBuffer, userId, context, postId, mimeType }) => {
+  validateImageFile({ fileBuffer, mimeType, context });
 
   const metadata = await sharp(fileBuffer).metadata();
-  const originalWidth = metadata.width || 1200;
+  const originalWidth = metadata.width || MAX_IMAGE_WIDTH;
   const originalHeight = metadata.height || 900;
 
-  // Optimizar con sharp
+  if (context === "AVATAR" && originalWidth !== originalHeight) {
+    const err = new Error("El avatar debe ser una imagen cuadrada");
+    err.statusCode = 422;
+    throw err;
+  }
+
   const optimizedBuffer = await sharp(fileBuffer)
-    .resize(1200, null, { withoutEnlargement: true })
-    .webp({ quality: 80 })
+    .resize(MAX_IMAGE_WIDTH, null, { withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY })
     .toBuffer();
 
-  // Generar placeholder Base64
   const placeholderBuffer = await sharp(fileBuffer)
     .resize(20, 20, { fit: "inside" })
     .webp({ quality: 20 })
     .toBuffer();
 
+  const mediaId = crypto.randomUUID();
+  const storagePath = buildMediaPath({ context, userId, postId, mediaId });
   const placeholderBase64 = `data:image/webp;base64,${placeholderBuffer.toString("base64")}`;
 
-  // Nombre de archivo aleatorio
-  const fileId = crypto.randomUUID();
-  const filename = `${fileId}.webp`;
-  const filePath = path.join(UPLOADS_DIR, filename);
+  await storageService.uploadFile(storagePath, optimizedBuffer, "image/webp");
 
-  // Escribir a disco
-  await fs.writeFile(filePath, optimizedBuffer);
-
-  // Guardar en base de datos
-  const port = config.server.port || 4000;
-  const fileUrl = `http://localhost:${port}/uploads/${filename}`;
-
-  const media = await prisma.media.create({
+  return prisma.media.create({
     data: {
-      id: fileId,
+      id: mediaId,
       userId,
-      url: fileUrl,
+      url: buildPublicStorageUrl(storagePath),
+      path: storagePath,
       context,
       placeholder: placeholderBase64,
       width: originalWidth,
@@ -55,29 +83,25 @@ export const uploadImage = async ({ fileBuffer, userId, context }) => {
       mimeType: "image/webp",
     },
   });
-
-  return media;
 };
 
 export const linkMediaToPost = async ({ postId, mediaId, sortOrder = 0, userId }) => {
-  // Validar pertenencia del post
   const post = await prisma.post.findUnique({
     where: { id: postId },
   });
 
   if (!post || post.deletedAt !== null) {
-    const err = new Error("Publicación no encontrada");
+    const err = new Error("Publicacion no encontrada");
     err.statusCode = 404;
     throw err;
   }
 
   if (post.userId !== userId) {
-    const err = new Error("No estás autorizado para modificar este post");
+    const err = new Error("No estas autorizado para modificar este post");
     err.statusCode = 403;
     throw err;
   }
 
-  // Validar pertenencia del media
   const media = await prisma.media.findUnique({
     where: { id: mediaId },
   });
@@ -89,7 +113,7 @@ export const linkMediaToPost = async ({ postId, mediaId, sortOrder = 0, userId }
   }
 
   if (media.userId !== userId) {
-    const err = new Error("No estás autorizado para usar este archivo multimedia");
+    const err = new Error("No estas autorizado para usar este archivo multimedia");
     err.statusCode = 403;
     throw err;
   }
@@ -115,8 +139,7 @@ export const linkMediaToPost = async ({ postId, mediaId, sortOrder = 0, userId }
     throw err;
   }
 
-  // Vincular
-  const association = await prisma.postMedia.upsert({
+  return prisma.postMedia.upsert({
     where: {
       postId_mediaId: {
         postId,
@@ -132,8 +155,6 @@ export const linkMediaToPost = async ({ postId, mediaId, sortOrder = 0, userId }
       sortOrder,
     },
   });
-
-  return association;
 };
 
 export const deleteMedia = async (mediaId, userId) => {
@@ -148,25 +169,17 @@ export const deleteMedia = async (mediaId, userId) => {
   }
 
   if (media.userId !== userId) {
-    const err = new Error("No estás autorizado para eliminar este archivo multimedia");
+    const err = new Error("No estas autorizado para eliminar este archivo multimedia");
     err.statusCode = 403;
     throw err;
   }
 
-  // Borrar de base de datos
   await prisma.media.delete({
     where: { id: mediaId },
   });
 
-  // Borrar de disco físico
-  const filename = path.basename(media.url);
-  const filePath = path.join(UPLOADS_DIR, filename);
-
-  try {
-    await fs.unlink(filePath);
-  } catch (unlinkErr) {
-    // Si no se encuentra el archivo, ignorar
-    console.error(`Error al borrar archivo físico: ${unlinkErr.message}`);
+  if (media.path) {
+    await storageService.deleteFiles([media.path]);
   }
 
   return { message: "Archivo y registro eliminados correctamente" };

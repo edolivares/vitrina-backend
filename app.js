@@ -47,6 +47,7 @@ app.use(morgan("dev"));
 
 // Serve static uploads
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/storage", express.static(path.resolve(process.cwd(), config.storage.localDir)));
 
 // Conditional Swagger UI route
 if (config.server.env !== "production") {
@@ -59,6 +60,7 @@ app.use("/api/auth/login", loginRateLimiter);
 app.use("/api/auth/register", registerRateLimiter);
 app.use("/api/auth/refresh", refreshRateLimiter);
 app.use("/api/auth/logout", privateWriteRateLimiter);
+app.use("/api/auth/me/avatar", mediaRateLimiter);
 app.use("/api/media/upload", mediaRateLimiter);
 app.use("/api/posts/:postId/media", mediaRateLimiter);
 app.use("/api/posts", privateWriteRateLimiter);

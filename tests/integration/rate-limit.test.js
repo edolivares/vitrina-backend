@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 
-vi.mock("../lib/database.js", () => ({
+vi.mock("../../lib/database.js", () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
@@ -14,12 +14,12 @@ vi.mock("../lib/database.js", () => ({
   },
 }));
 
-vi.mock("../services/location.service.js", () => ({
+vi.mock("../../services/location.service.js", () => ({
   getRegions: vi.fn(async () => []),
   getCitiesByRegion: vi.fn(async () => []),
 }));
 
-vi.mock("../services/auth.service.js", () => ({
+vi.mock("../../services/auth.service.js", () => ({
   loginUser: vi.fn(async () => {
     throw new Error("Correo o contrasena incorrectos");
   }),
@@ -51,7 +51,7 @@ const loadApp = async (env = {}) => {
     ...env,
   });
 
-  const mod = await import("../app.js");
+  const mod = await import("../../app.js");
   return mod.default;
 };
 

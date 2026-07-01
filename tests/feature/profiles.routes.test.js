@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import app from "../../app.js";
 
-vi.mock("../lib/database.js", () => ({
+vi.mock("../../lib/database.js", () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
@@ -18,7 +18,7 @@ vi.mock("../lib/database.js", () => ({
 
 const profileId = "0f2391a4-ef26-4712-a63f-4c41dbbd9d44";
 
-vi.mock("../services/profiles.service.js", () => ({
+vi.mock("../../services/profiles.service.js", () => ({
   getPublicProfile: vi.fn(async (id) => {
     if (id !== profileId) {
       const err = new Error("Perfil no encontrado");

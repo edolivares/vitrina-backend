@@ -98,7 +98,7 @@ router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema),
     const contentType = req.headers["content-type"] || "";
 
     if (contentType.includes("multipart/form-data")) {
-      const parsed = await parseMultipart(req);
+      const parsed = await parseMultipart(req, { maxBytes: config.media.postMaxFileSizeBytes });
       const file = parsed.files.file;
       const sortOrder = parsed.fields.sortOrder ? Number(parsed.fields.sortOrder) : 0;
 
@@ -113,6 +113,8 @@ router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema),
         fileBuffer: file.buffer,
         userId: req.user.id,
         context: "POST",
+        postId,
+        mimeType: file.mimeType,
       });
 
       const association = await linkMediaToPost({

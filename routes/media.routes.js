@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { parseMultipart } from "../lib/multipart.js";
+import { config } from "../lib/config.js";
 import { uploadImage, deleteMedia } from "../services/media.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { validateParams } from "../middlewares/validate.middleware.js";
@@ -10,7 +11,7 @@ const router = Router();
 // 1. Subir imagen
 router.post("/upload", authMiddleware, async (req, res, next) => {
   try {
-    const parsed = await parseMultipart(req);
+    const parsed = await parseMultipart(req, { maxBytes: config.media.postMaxFileSizeBytes });
     const file = parsed.files.file;
     const rawContext = parsed.fields.context || "post";
     const context = rawContext.toUpperCase();
@@ -33,6 +34,7 @@ router.post("/upload", authMiddleware, async (req, res, next) => {
       fileBuffer: file.buffer,
       userId: req.user.id,
       context,
+      mimeType: file.mimeType,
     });
 
     res.status(201).json({

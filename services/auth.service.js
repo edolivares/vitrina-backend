@@ -3,6 +3,7 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
+import { deleteMedia, uploadImage } from "./media.service.js";
 
 const createAccessToken = (user) => jwt.sign(
   { id: user.id, email: user.email },
@@ -35,6 +36,13 @@ const toAuthUser = (user) => ({
   email: user.email,
   bio: user.bio,
   avatarId: user.avatarId,
+  avatar: user.avatar
+    ? {
+        id: user.avatar.id,
+        url: user.avatar.url,
+        placeholder: user.avatar.placeholder,
+      }
+    : null,
 });
 
 export const registerUser = async ({ name, email, password }) => {
@@ -103,7 +111,13 @@ export const refreshAccessToken = async (refreshToken) => {
   const tokenHash = hashRefreshToken(refreshToken);
   const storedToken = await prisma.refreshToken.findUnique({
     where: { tokenHash },
-    include: { user: true },
+    include: {
+      user: {
+        include: {
+          avatar: true,
+        },
+      },
+    },
   });
 
   if (!storedToken || storedToken.revokedAt || storedToken.expiresAt <= new Date()) {
@@ -167,7 +181,21 @@ export const updateUserProfile = async (userId, { name, email, bio, avatarId }) 
   if (name !== undefined) updateData.name = name;
   if (email !== undefined) updateData.email = email;
   if (bio !== undefined) updateData.bio = bio;
-  if (avatarId !== undefined) updateData.avatarId = avatarId;
+  if (avatarId !== undefined) {
+    if (avatarId !== null) {
+      const avatar = await prisma.media.findUnique({
+        where: { id: avatarId },
+      });
+
+      if (!avatar || avatar.userId !== userId || avatar.context !== "AVATAR") {
+        const err = new Error("Avatar no encontrado");
+        err.statusCode = 404;
+        throw err;
+      }
+    }
+
+    updateData.avatarId = avatarId;
+  }
 
   const updatedUser = await prisma.user.update({
     where: { id: userId },
@@ -189,6 +217,55 @@ export const updateUserProfile = async (userId, { name, email, bio, avatarId }) 
           placeholder: updatedUser.avatar.placeholder,
         }
       : null,
+    createdAt: updatedUser.createdAt,
+  };
+};
+
+export const uploadUserAvatar = async (userId, fileBuffer, mimeType) => {
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { avatarId: true },
+  });
+
+  if (!currentUser) {
+    const err = new Error("Usuario no encontrado");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const media = await uploadImage({
+    fileBuffer,
+    userId,
+    context: "AVATAR",
+    mimeType,
+  });
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { avatarId: media.id },
+    include: {
+      avatar: true,
+    },
+  });
+
+  if (currentUser.avatarId && currentUser.avatarId !== media.id) {
+    await deleteMedia(currentUser.avatarId, userId);
+  }
+
+  return {
+    id: updatedUser.id,
+    name: updatedUser.name,
+    email: updatedUser.email,
+    bio: updatedUser.bio,
+    avatar: {
+      id: media.id,
+      url: media.url,
+      placeholder: media.placeholder,
+      width: media.width,
+      height: media.height,
+      size: media.size,
+      mimeType: media.mimeType,
+    },
     createdAt: updatedUser.createdAt,
   };
 };

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, vi } from "vitest";
 import request from "supertest";
 import jwt from "jsonwebtoken";
-import app from "../app.js";
-import { config } from "../lib/config.js";
+import app from "../../app.js";
+import { config } from "../../lib/config.js";
 
 // Interceptar lib/database.js para evitar que se importe/inicie el Prisma Client real
-vi.mock("../lib/database.js", () => ({
+vi.mock("../../lib/database.js", () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
@@ -35,7 +35,7 @@ let mockPostDetails = {
 };
 
 // Mock del servicio de publicaciones
-vi.mock("../services/posts.service.js", () => {
+vi.mock("../../services/posts.service.js", () => {
   return {
     createDraft: vi.fn(async (userId) => {
       if (mockDraftCount >= 5) {
@@ -151,7 +151,7 @@ vi.mock("../services/posts.service.js", () => {
   };
 });
 
-vi.mock("../services/media.service.js", () => ({
+vi.mock("../../services/media.service.js", () => ({
   uploadImage: vi.fn(async () => ({
     id: "77a8b9c0-d1e2-3f4a-5b6c-7d8e9f0a1b2c",
     url: "http://localhost:4000/uploads/test.webp",

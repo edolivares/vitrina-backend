@@ -182,4 +182,36 @@ export const authPaths = {
       },
     },
   },
+  "/api/auth/me/avatar": {
+    post: {
+      summary: "Subir y asignar avatar del usuario autenticado",
+      tags: ["Autenticación"],
+      security: [{ BearerAuth: [] }],
+      requestBody: {
+        required: true,
+        content: {
+          "multipart/form-data": {
+            schema: {
+              type: "object",
+              required: ["file"],
+              properties: {
+                file: { type: "string", format: "binary" },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "Avatar actualizado con imagen WebP y placeholder base64",
+        },
+        400: {
+          description: "Archivo ausente o invalido",
+        },
+        401: {
+          description: "No autorizado",
+        },
+      },
+    },
+  },
 };

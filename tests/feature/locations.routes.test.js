@@ -1,10 +1,10 @@
-import "./setup.js";
+import "../setup.js";
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
-import app from "../app.js";
+import app from "../../app.js";
 
 // Interceptar lib/database.js para evitar que se importe/inicie el Prisma Client real
-vi.mock("../lib/database.js", () => ({
+vi.mock("../../lib/database.js", () => ({
   prisma: {
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
@@ -18,7 +18,7 @@ vi.mock("../lib/database.js", () => ({
 }));
 
 // Mock del servicio de ubicaciones
-vi.mock("../services/location.service.js", () => {
+vi.mock("../../services/location.service.js", () => {
   return {
     getRegions: vi.fn(async () => [
       {
