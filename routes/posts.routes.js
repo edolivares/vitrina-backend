@@ -14,6 +14,7 @@ import {
 } from "../services/posts.service.js";
 import { linkMediaToPost, uploadImage } from "../services/media.service.js";
 import { createOrGetPostChat, listPostChats } from "../services/messages.service.js";
+import { getPostMetrics, getViewContext, trackPostView } from "../services/metrics.service.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { validateBody, validateParams } from "../middlewares/validate.middleware.js";
 import { linkMediaSchema } from "../schemas/media.schema.js";
@@ -230,9 +231,33 @@ router.get("/:id", validateParams(uuidParamSchema), async (req, res, next) => {
     }
 
     const postDetail = await getDetail(postId, userId);
+    await trackPostView({
+      postId,
+      viewerId: userId,
+      viewContext: getViewContext(req),
+    });
+
     res.status(200).json({
       status: "success",
       data: postDetail,
+    });
+  } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({
+        status: "error",
+        message: error.message,
+      });
+    }
+    next(error);
+  }
+});
+
+router.get("/:id/metrics", authMiddleware, validateParams(uuidParamSchema), async (req, res, next) => {
+  try {
+    const metrics = await getPostMetrics(req.validatedParams.id, req.user.id);
+    res.status(200).json({
+      status: "success",
+      data: metrics,
     });
   } catch (error) {
     if (error.statusCode) {

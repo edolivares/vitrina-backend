@@ -166,6 +166,27 @@ vi.mock("../../services/media.service.js", () => ({
   deleteMedia: vi.fn(),
 }));
 
+vi.mock("../../services/metrics.service.js", () => ({
+  getViewContext: vi.fn(() => ({
+    ipHash: "ip-hash",
+    userAgentHash: "ua-hash",
+    isBot: false,
+  })),
+  trackPostView: vi.fn(async () => true),
+  getPostMetrics: vi.fn(async (postId) => ({
+    postId,
+    views: {
+      total: 100,
+      last24h: 12,
+      last48h: 20,
+    },
+    favorites: 8,
+    conversations: 2,
+    interestRate: 10,
+    lastContactAt: "2026-07-01T12:00:00.000Z",
+  })),
+}));
+
 describe("Publicaciones REST API (Mocked)", () => {
   let token = "";
   const firstPostId = "3c3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f";
@@ -288,6 +309,21 @@ describe("Publicaciones REST API (Mocked)", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
     expect(res.body.data.title).toBe("Bicicleta Mountain Bike Aro 29");
+  });
+
+  it("Deberia exponer metricas de una publicacion propia", async () => {
+    const res = await request(app)
+      .get(`/api/posts/${firstPostId}/metrics`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.data.views.total).toBe(100);
+    expect(res.body.data.views.last24h).toBe(12);
+    expect(res.body.data.views.last48h).toBe(20);
+    expect(res.body.data.favorites).toBe(8);
+    expect(res.body.data.conversations).toBe(2);
+    expect(res.body.data.interestRate).toBe(10);
   });
 
   it("Debería listar la publicación en la galería pública", async () => {

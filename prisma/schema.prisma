@@ -82,8 +82,25 @@ model Post {
   media    PostMedia[]
   savedBy  SavedPost[]
   chats    Chat[]
+  views    PostView[]
 
   @@map("posts")
+}
+
+model PostView {
+  id            String   @id @default(uuid()) @db.Uuid
+  postId        String   @map("post_id") @db.Uuid
+  viewerId      String?  @map("viewer_id") @db.Uuid
+  ipHash        String?  @map("ip_hash")
+  userAgentHash String?  @map("user_agent_hash")
+  viewedAt      DateTime @default(now()) @map("viewed_at")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId, viewedAt])
+  @@index([postId, viewerId, viewedAt])
+  @@index([postId, ipHash, userAgentHash, viewedAt])
+  @@map("post_views")
 }
 
 enum MediaContext {

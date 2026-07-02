@@ -117,6 +117,51 @@ export const postPaths = {
       },
     },
   },
+  "/api/posts/{id}/metrics": {
+    get: {
+      summary: "Obtener métricas de una publicación propia",
+      tags: ["Publicaciones"],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" }, description: "UUID de la publicación" },
+      ],
+      responses: {
+        200: {
+          description: "Resumen de métricas de la publicación",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  status: { type: "string", example: "success" },
+                  data: {
+                    type: "object",
+                    properties: {
+                      postId: { type: "string", format: "uuid" },
+                      views: {
+                        type: "object",
+                        properties: {
+                          total: { type: "integer", example: 657 },
+                          last24h: { type: "integer", example: 31 },
+                          last48h: { type: "integer", example: 52 },
+                        },
+                      },
+                      favorites: { type: "integer", example: 18 },
+                      conversations: { type: "integer", example: 4 },
+                      interestRate: { type: "number", example: 3.3 },
+                      lastContactAt: { type: "string", format: "date-time", nullable: true },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        403: { description: "No propietario" },
+        404: { description: "Publicación no encontrada" },
+      },
+    },
+  },
   "/api/posts/{id}/reactivate": {
     patch: {
       summary: "Reactivar publicación",
