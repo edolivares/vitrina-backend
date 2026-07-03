@@ -1,0 +1,507 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Vitrina API",
+  "dateExported": "2026-07-03T03:00:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "_id": "f_auth",
+      "name": "Autenticación",
+      "sortNum": 10000
+    },
+    {
+      "_id": "f_locations",
+      "name": "Ubicaciones",
+      "sortNum": 20000
+    },
+    {
+      "_id": "f_posts",
+      "name": "Publicaciones",
+      "sortNum": 30000
+    },
+    {
+      "_id": "f_media",
+      "name": "Media",
+      "sortNum": 40000
+    },
+    {
+      "_id": "f_chats",
+      "name": "Chats y Mensajería",
+      "sortNum": 50000
+    },
+    {
+      "_id": "f_profiles",
+      "name": "Perfiles Públicos",
+      "sortNum": 60000
+    },
+    {
+      "_id": "f_saved",
+      "name": "Favoritos",
+      "sortNum": 70000
+    }
+  ],
+  "requests": [
+    {
+      "_id": "req_auth_register",
+      "containerId": "f_auth",
+      "name": "Registrar Usuario",
+      "url": "{{base_url}}/api/auth/register",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan.perez@email.com\",\n  \"password\": \"securepassword123\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_login",
+      "containerId": "f_auth",
+      "name": "Iniciar Sesión",
+      "url": "{{base_url}}/api/auth/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"juan.perez@email.com\",\n  \"password\": \"securepassword123\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_refresh",
+      "containerId": "f_auth",
+      "name": "Renovar Access Token (Refresh)",
+      "url": "{{base_url}}/api/auth/refresh",
+      "method": "POST",
+      "sortNum": 30000,
+      "headers": []
+    },
+    {
+      "_id": "req_auth_me",
+      "containerId": "f_auth",
+      "name": "Obtener Perfil Propio (Me)",
+      "url": "{{base_url}}/api/auth/me",
+      "method": "GET",
+      "sortNum": 40000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_auth_me_put",
+      "containerId": "f_auth",
+      "name": "Actualizar Perfil Propio",
+      "url": "{{base_url}}/api/auth/me",
+      "method": "PUT",
+      "sortNum": 50000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Juan P. Pérez\",\n  \"email\": \"juan.perez@email.com\",\n  \"bio\": \"Comprador y vendedor confiable de Santiago.\"\n}"
+      }
+    },
+    {
+      "_id": "req_auth_me_avatar",
+      "containerId": "f_auth",
+      "name": "Subir Avatar Propio",
+      "url": "{{base_url}}/api/auth/me/avatar",
+      "method": "POST",
+      "sortNum": 60000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "formdata": [
+          {
+            "key": "file",
+            "type": "file",
+            "value": ""
+          }
+        ]
+      }
+    },
+    {
+      "_id": "req_auth_logout",
+      "containerId": "f_auth",
+      "name": "Cerrar Sesión (Logout)",
+      "url": "{{base_url}}/api/auth/logout",
+      "method": "POST",
+      "sortNum": 70000,
+      "headers": []
+    },
+    {
+      "_id": "req_loc_regions",
+      "containerId": "f_locations",
+      "name": "Listar Regiones",
+      "url": "{{base_url}}/api/locations/regions",
+      "method": "GET",
+      "sortNum": 10000,
+      "headers": []
+    },
+    {
+      "_id": "req_loc_cities",
+      "containerId": "f_locations",
+      "name": "Listar Comunas por Región",
+      "url": "{{base_url}}/api/locations/regions/13/cities",
+      "method": "GET",
+      "sortNum": 20000,
+      "headers": []
+    },
+    {
+      "_id": "req_posts_draft",
+      "containerId": "f_posts",
+      "name": "Inicializar Borrador (Draft)",
+      "url": "{{base_url}}/api/posts/draft",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_posts_put",
+      "containerId": "f_posts",
+      "name": "Guardar / Publicar Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}",
+      "method": "PUT",
+      "sortNum": 20000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Bicicleta Oxford Rodado 26\",\n  \"description\": \"Excelente bicicleta de paseo en perfecto estado.\",\n  \"price\": 120000,\n  \"cityId\": 13101,\n  \"condition\": \"USED\",\n  \"status\": \"PUBLISHED\"\n}"
+      }
+    },
+    {
+      "_id": "req_posts_me",
+      "containerId": "f_posts",
+      "name": "Listar Mis Publicaciones (Dashboard)",
+      "url": "{{base_url}}/api/posts/me?status=PUBLISHED&limit=10&offset=0",
+      "method": "GET",
+      "sortNum": 30000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_posts_gallery",
+      "containerId": "f_posts",
+      "name": "Listar Galería Pública",
+      "url": "{{base_url}}/api/posts?search=Bicicleta&cityId=13101&limit=12&offset=0",
+      "method": "GET",
+      "sortNum": 40000,
+      "headers": []
+    },
+    {
+      "_id": "req_posts_detail",
+      "containerId": "f_posts",
+      "name": "Detalle de Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}",
+      "method": "GET",
+      "sortNum": 50000,
+      "headers": []
+    },
+    {
+      "_id": "req_posts_upload_media",
+      "containerId": "f_posts",
+      "name": "Subir y Vincular Imagen a Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/media",
+      "method": "POST",
+      "sortNum": 60000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "formdata": [
+          {
+            "key": "file",
+            "type": "file",
+            "value": ""
+          },
+          {
+            "key": "sortOrder",
+            "type": "text",
+            "value": "0"
+          }
+        ]
+      }
+    },
+    {
+      "_id": "req_posts_link_media",
+      "containerId": "f_posts",
+      "name": "Vincular Media Existente a Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/media",
+      "method": "POST",
+      "sortNum": 70000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"mediaId\": \"{{media_id}}\",\n  \"sortOrder\": 1\n}"
+      }
+    },
+    {
+      "_id": "req_posts_metrics",
+      "containerId": "f_posts",
+      "name": "Ver Métricas de Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/metrics",
+      "method": "GET",
+      "sortNum": 80000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_posts_archive",
+      "containerId": "f_posts",
+      "name": "Archivar Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/archive",
+      "method": "PATCH",
+      "sortNum": 90000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_posts_reactivate",
+      "containerId": "f_posts",
+      "name": "Reactivar Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/reactivate",
+      "method": "PATCH",
+      "sortNum": 100000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_posts_delete",
+      "containerId": "f_posts",
+      "name": "Eliminar Publicación (Soft Delete)",
+      "url": "{{base_url}}/api/posts/{{post_id}}",
+      "method": "DELETE",
+      "sortNum": 110000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_media_upload",
+      "containerId": "f_media",
+      "name": "Subir Imagen General",
+      "url": "{{base_url}}/api/media/upload",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "formdata",
+        "formdata": [
+          {
+            "key": "file",
+            "type": "file",
+            "value": ""
+          },
+          {
+            "key": "context",
+            "type": "text",
+            "value": "post"
+          }
+        ]
+      }
+    },
+    {
+      "_id": "req_media_delete",
+      "containerId": "f_media",
+      "name": "Eliminar Media",
+      "url": "{{base_url}}/api/media/{{media_id}}",
+      "method": "DELETE",
+      "sortNum": 20000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_chats_create",
+      "containerId": "f_chats",
+      "name": "Crear o Abrir Chat de una Publicación",
+      "url": "{{base_url}}/api/posts/{{post_id}}/chats",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_chats_list_by_post",
+      "containerId": "f_chats",
+      "name": "Listar Chats de una Publicación (Creador)",
+      "url": "{{base_url}}/api/posts/{{post_id}}/chats",
+      "method": "GET",
+      "sortNum": 20000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_chats_list_own",
+      "containerId": "f_chats",
+      "name": "Listar Todos Mis Chats (Bandeja)",
+      "url": "{{base_url}}/api/chats",
+      "method": "GET",
+      "sortNum": 30000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_chats_messages",
+      "containerId": "f_chats",
+      "name": "Listar Mensajes de un Chat",
+      "url": "{{base_url}}/api/chats/{{chat_id}}/messages",
+      "method": "GET",
+      "sortNum": 40000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_chats_send",
+      "containerId": "f_chats",
+      "name": "Enviar Mensaje",
+      "url": "{{base_url}}/api/chats/{{chat_id}}/messages",
+      "method": "POST",
+      "sortNum": 50000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"content\": \"Hola, sigue disponible el producto?\"\n}"
+      }
+    },
+    {
+      "_id": "req_profiles_public",
+      "containerId": "f_profiles",
+      "name": "Obtener Perfil Público por ID",
+      "url": "{{base_url}}/api/profiles/{{user_id}}",
+      "method": "GET",
+      "sortNum": 10000,
+      "headers": []
+    },
+    {
+      "_id": "req_saved_post",
+      "containerId": "f_saved",
+      "name": "Agregar a Favoritos",
+      "url": "{{base_url}}/api/saved-posts",
+      "method": "POST",
+      "sortNum": 10000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"postId\": \"{{post_id}}\"\n}"
+      }
+    },
+    {
+      "_id": "req_saved_list",
+      "containerId": "f_saved",
+      "name": "Listar Mis Favoritos",
+      "url": "{{base_url}}/api/saved-posts",
+      "method": "GET",
+      "sortNum": 20000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "req_saved_delete",
+      "containerId": "f_saved",
+      "name": "Eliminar de Favoritos",
+      "url": "{{base_url}}/api/saved-posts/{{post_id}}",
+      "method": "DELETE",
+      "sortNum": 30000,
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{token}}"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "options": {
+      "baseUrl": "http://localhost:4000"
+    }
+  }
+}
