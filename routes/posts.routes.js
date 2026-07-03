@@ -76,6 +76,9 @@ router.get("/", async (req, res, next) => {
     const posts = await listPublished({
       search: req.query.search,
       cityId: req.query.cityId,
+      regionId: req.query.regionId,
+      region: req.query.region,
+      comuna: req.query.comuna,
       minPrice: req.query.minPrice,
       maxPrice: req.query.maxPrice,
       condition: req.query.condition,

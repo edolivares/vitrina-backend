@@ -241,6 +241,26 @@ describe("Publicaciones REST API (Mocked)", () => {
     expect(res.body.data.status).toBe("DRAFT");
   });
 
+  it("Deberia permitir guardar un borrador incompleto al cambiar la comuna", async () => {
+    const draftPayload = {
+      title: "Sin Título",
+      description: "",
+      price: 0,
+      cityId: 4102,
+      condition: "USED",
+      status: "DRAFT",
+    };
+
+    const res = await request(app)
+      .put(`/api/posts/${firstPostId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send(draftPayload);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.data.status).toBe("DRAFT");
+  });
+
   it("Debería actualizar y publicar el borrador", async () => {
     const postPayload = {
       title: "Bicicleta Mountain Bike Aro 29",

@@ -1,4 +1,8 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import sharp from 'sharp';
+import { promises as fs } from 'fs';
+import path from 'path';
 const prisma = new PrismaClient();
 
 const regionsData = [
@@ -2538,7 +2542,6 @@ async function main() {
   }
   console.log(' Regiones sembradas exitosamente.');
 
-  console.log(' Iniciando sembrado de ciudades (comunas) estáticas...');
   for (const c of citiesData) {
     await prisma.city.upsert({
       where: { id: c.id },
@@ -2553,6 +2556,207 @@ async function main() {
     });
   }
   console.log(` Sembrado de ciudades finalizado. Se insertaron ${citiesData.length} comunas.`);
+
+  console.log(' Iniciando sembrado de usuarios ficticios y sus publicaciones...');
+  const passwordHash = await bcrypt.hash('password123', 10);
+
+  // Helper to copy local seed assets to the storage directory and generate a WebP blur placeholder
+  async function copySeedImageAsset(postId, mediaId) {
+    try {
+      const fileName = `${mediaId}.webp`;
+      const sourcePath = path.resolve("./prisma/seed-assets/posts", postId, fileName);
+      const destDir = path.resolve("./storage/media/posts", postId);
+      const destPath = path.join(destDir, fileName);
+
+      // Create target directory
+      await fs.mkdir(destDir, { recursive: true });
+      
+      // Copy file
+      await fs.copyFile(sourcePath, destPath);
+
+      // Get file size
+      const stats = await fs.stat(destPath);
+
+      // Read file and generate a tiny WebP blur placeholder (20x20)
+      const fileBuffer = await fs.readFile(sourcePath);
+      const placeholderBuffer = await sharp(fileBuffer)
+        .resize(20, 20, { fit: "inside" })
+        .webp({ quality: 20 })
+        .toBuffer();
+      
+      const placeholderBase64 = `data:image/webp;base64,${placeholderBuffer.toString("base64")}`;
+
+      return {
+        url: `http://localhost:4000/storage/media/posts/${postId}/${fileName}`,
+        path: `posts/${postId}/${fileName}`,
+        placeholder: placeholderBase64,
+        size: stats.size,
+      };
+    } catch (err) {
+      console.error(` Error al copiar/procesar imagen local del seed para mediaId ${mediaId}:`, err);
+      return {
+        url: `http://localhost:4000/storage/media/posts/${postId}/${mediaId}.webp`,
+        path: `posts/${postId}/${mediaId}.webp`,
+        placeholder: null,
+        size: 0,
+      };
+    }
+  }
+
+  const users = [
+    {
+      id: 'd9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c',
+      name: 'Diego Valdivia',
+      email: 'diego@vitrina.cl',
+      password: passwordHash,
+      bio: 'Publico artículos cuidados y respondo rápido para coordinar sin vueltas.'
+    },
+    {
+      id: 'e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c',
+      name: 'Rodrigo Araya',
+      email: 'rodrigo@vitrina.cl',
+      password: passwordHash,
+      bio: 'Vendo barato y seguro. Prefiero coordinar entregas claras y en lugares cómodos.'
+    },
+    {
+      id: 'f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c',
+      name: 'Paula Espinoza',
+      email: 'paula@vitrina.cl',
+      password: passwordHash,
+      bio: 'Me gusta vender cosas útiles, bien cuidadas y con información transparente.'
+    }
+  ];
+
+  for (const u of users) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {
+        name: u.name,
+        password: u.password,
+        bio: u.bio
+      },
+      create: u
+    });
+  }
+  console.log(' Usuarios ficticios creados.');
+
+  // Crear publicaciones asociadas con imágenes locales ya presentes en seed-assets
+  const posts = [
+    {
+      id: '1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f',
+      userId: 'd9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c', // Diego
+      cityId: 13101, // Santiago
+      title: 'Guitarra Electroacústica Fender FA-125CE',
+      description: 'Guitarra electroacústica Fender con cutaway. Tapa de abeto laminado, aros y fondo de caoba. Preamplificador Fishman integrado con afinador. Incluye funda acolchada, correa y set de uñetas. Excelente sonido, ideal para principiantes e intermedios.',
+      price: 130000,
+      condition: 'USED',
+      images: [
+        { mediaId: '1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a' },
+        { mediaId: '1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b' }
+      ]
+    },
+    {
+      id: '2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f',
+      userId: 'e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c', // Rodrigo
+      cityId: 4101, // La Serena
+      title: 'Bicicleta Trek Marlin 5 Aro 29',
+      description: 'Bicicleta de montaña Trek Marlin 5 en excelente estado. Marco de aluminio talla M, transmisión Shimano de 2x8 velocidades, frenos de disco hidráulicos Tektro. Mantención recién hecha. Lista para pedalear.',
+      price: 420000,
+      condition: 'USED',
+      images: [
+        { mediaId: '2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a' },
+        { mediaId: '2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b' }
+      ]
+    },
+    {
+      id: '3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f',
+      userId: 'f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c', // Paula
+      cityId: 4102, // Coquimbo
+      title: 'Mesa de centro madera rústica',
+      description: 'Mesa de centro fabricada a mano con madera de roble reciclada. Acabado con barniz poliuretano mate para alta resistencia. Medidas: 100cm de largo x 60cm de ancho x 45cm de alto. Patas metálicas estilo hairpin.',
+      price: 85000,
+      condition: 'NEW',
+      images: [
+        { mediaId: '3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a' },
+        { mediaId: '3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b' }
+      ]
+    }
+  ];
+
+  for (const p of posts) {
+    const city = citiesData.find(c => c.id === p.cityId);
+    const lat = city ? city.latitudeDefault : null;
+    const lng = city ? city.longitudeDefault : null;
+
+    // Upsert post
+    await prisma.post.upsert({
+      where: { id: p.id },
+      update: {
+        title: p.title,
+        description: p.description,
+        price: p.price,
+        cityId: p.cityId,
+        condition: p.condition,
+        latitude: lat,
+        longitude: lng,
+        status: 'PUBLISHED'
+      },
+      create: {
+        id: p.id,
+        userId: p.userId,
+        cityId: p.cityId,
+        title: p.title,
+        description: p.description,
+        price: p.price,
+        condition: p.condition,
+        latitude: lat,
+        longitude: lng,
+        status: 'PUBLISHED'
+      }
+    });
+
+    let sortOrder = 0;
+    for (const img of p.images) {
+      // Copy asset file physically
+      const savedMedia = await copySeedImageAsset(p.id, img.mediaId);
+
+      // Crear media
+      await prisma.media.upsert({
+        where: { id: img.mediaId },
+        update: {
+          url: savedMedia.url,
+          path: savedMedia.path,
+          placeholder: savedMedia.placeholder,
+          size: savedMedia.size
+        },
+        create: {
+          id: img.mediaId,
+          userId: p.userId,
+          url: savedMedia.url,
+          path: savedMedia.path,
+          placeholder: savedMedia.placeholder,
+          size: savedMedia.size,
+          mimeType: 'image/webp',
+          context: 'POST'
+        }
+      });
+
+      // Asociar en post_media
+      await prisma.postMedia.upsert({
+        where: { postId_mediaId: { postId: p.id, mediaId: img.mediaId } },
+        update: {
+          sortOrder
+        },
+        create: {
+          postId: p.id,
+          mediaId: img.mediaId,
+          sortOrder
+        }
+      });
+      sortOrder++;
+    }
+  }
+  console.log(' Publicaciones y fotos asociadas creadas exitosamente.');
 }
 
 main()

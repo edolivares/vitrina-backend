@@ -6,6 +6,7 @@ export const postPaths = {
       parameters: [
         { name: "search", in: "query", schema: { type: "string" }, description: "Búsqueda por palabra clave" },
         { name: "cityId", in: "query", schema: { type: "integer" }, description: "ID de comuna" },
+        { name: "regionId", in: "query", schema: { type: "integer" }, description: "ID de región" },
         { name: "minPrice", in: "query", schema: { type: "number" }, description: "Precio mínimo" },
         { name: "maxPrice", in: "query", schema: { type: "number" }, description: "Precio máximo" },
         { name: "condition", in: "query", schema: { type: "string", enum: ["NEW", "USED"] }, description: "CondiciÃ³n del artÃ­culo" },

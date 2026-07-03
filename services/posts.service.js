@@ -31,6 +31,8 @@ export const createDraft = async (userId) => {
       title: "Sin Título",
       description: "",
       price: 0,
+      latitude: defaultCity.latitudeDefault,
+      longitude: defaultCity.longitudeDefault,
       status: "DRAFT",
       condition: "USED",
     },
@@ -75,6 +77,19 @@ export const updatePost = async (postId, userId, data) => {
     }
   }
 
+  // Obtener las coordenadas por defecto de la comuna si no vienen especificadas
+  let lat = data.latitude;
+  let lng = data.longitude;
+  if (lat === undefined || lat === null || lng === undefined || lng === null) {
+    const city = await prisma.city.findUnique({
+      where: { id: data.cityId },
+    });
+    if (city) {
+      lat = city.latitudeDefault;
+      lng = city.longitudeDefault;
+    }
+  }
+
   const updatedPost = await prisma.post.update({
     where: { id: postId },
     data: {
@@ -82,8 +97,8 @@ export const updatePost = async (postId, userId, data) => {
       description: data.description,
       price: data.price,
       cityId: data.cityId,
-      latitude: data.latitude ?? null,
-      longitude: data.longitude ?? null,
+      latitude: lat,
+      longitude: lng,
       condition: data.condition,
       status: data.status,
     },
@@ -93,7 +108,7 @@ export const updatePost = async (postId, userId, data) => {
 };
 
 export const listPublished = async (filters = {}) => {
-  const { search, cityId, minPrice, maxPrice, condition, limit = 20, offset = 0 } = filters;
+  const { search, cityId, regionId, region, comuna, minPrice, maxPrice, condition, limit = 20, offset = 0 } = filters;
 
   const whereClause = {
     deletedAt: null,
@@ -109,18 +124,37 @@ export const listPublished = async (filters = {}) => {
 
   if (cityId) {
     whereClause.cityId = Number(cityId);
+  } else if (regionId) {
+    whereClause.city = { regionId: Number(regionId) };
+  } else if (comuna) {
+    whereClause.city = { name: { equals: comuna, mode: "insensitive" } };
+  } else if (region) {
+    whereClause.city = {
+      region: {
+        OR: [
+          { name: { equals: region, mode: "insensitive" } },
+          { shortName: { equals: region, mode: "insensitive" } }
+        ]
+      }
+    };
   }
 
-  if (minPrice !== undefined) {
+  if (minPrice !== undefined && minPrice !== "") {
     whereClause.price = { ...whereClause.price, gte: Number(minPrice) };
   }
 
-  if (maxPrice !== undefined) {
+  if (maxPrice !== undefined && maxPrice !== "") {
     whereClause.price = { ...whereClause.price, lte: Number(maxPrice) };
   }
 
   if (condition) {
-    whereClause.condition = condition;
+    // Aceptar enums "NEW"/"USED" y mapear del frontend "Nuevo"/"Usado" si es necesario
+    const conditionUpper = condition.toUpperCase();
+    if (conditionUpper === "NUEVO" || conditionUpper === "NEW") {
+      whereClause.condition = "NEW";
+    } else if (conditionUpper === "USADO" || conditionUpper === "USED") {
+      whereClause.condition = "USED";
+    }
   }
 
   const posts = await prisma.post.findMany({
@@ -142,6 +176,7 @@ export const listPublished = async (filters = {}) => {
     const coverMedia = post.media[0]?.media;
     return {
       id: post.id,
+      userId: post.userId,
       title: post.title,
       price: post.price.toString(),
       condition: post.condition,
@@ -164,7 +199,9 @@ export const getDetail = async (postId, userId) => {
       city: {
         include: { region: true },
       },
-      user: true,
+      user: {
+        include: { avatar: true }
+      },
       media: {
         include: { media: true },
         orderBy: { sortOrder: "asc" },
@@ -197,12 +234,19 @@ export const getDetail = async (postId, userId) => {
     status: post.status,
     condition: post.condition,
     city: {
+      id: post.city.id,
       name: post.city.name,
-      region: post.city.region.name,
+      region: {
+        id: post.city.region.id,
+        name: post.city.region.name,
+        shortName: post.city.region.shortName,
+      },
     },
     seller: {
+      id: post.user.id,
       name: post.user.name,
       email: post.user.email,
+      avatarUrl: post.user.avatar?.url || null,
     },
     gallery: post.media.map((pm) => ({
       url: pm.media.url,
@@ -259,6 +303,7 @@ export const listOwn = async (userId, filters = {}) => {
     skip: Number(offset),
     take: Number(limit),
     include: {
+      city: true,
       media: {
         where: { sortOrder: 0 },
         include: { media: true },
@@ -275,6 +320,7 @@ export const listOwn = async (userId, filters = {}) => {
       price: post.price.toString(),
       status: post.status,
       condition: post.condition,
+      cityName: post.city?.name || null,
       coverImage: coverMedia
         ? {
             url: coverMedia.url,
