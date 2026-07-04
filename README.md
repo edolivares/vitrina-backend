@@ -4,142 +4,154 @@
 
 ![NodeJS](https://img.shields.io/badge/Node.js-6DA55F?style=flat-square&logo=node.js&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-7A9B57?style=flat-square&logo=vitest&logoColor=white)
 
-API REST para el proyecto Vitrina Marketplace.
+API REST para la plataforma Vitrina Marketplace. Este repositorio contiene toda la lógica de negocio, persistencia de datos, autenticación, procesamiento de imágenes y la suite de pruebas unitarias y de integración del backend.
 
-## Tecnologías
+---
 
-- Node.js con ES Modules
-- Express 4
-- Prisma ORM
-- PostgreSQL
-- pnpm con `pnpm-workspace.yaml`
-- Zod para validaciones
-- JWT para autenticación
-- Vitest y Supertest para pruebas
-- Swagger UI para documentación de API
-- Sharp para procesamiento de imágenes
+## 🚀 Guía de Instalación e Inicio Rápido
 
-## Requisitos
+Sigue estos sencillos pasos para levantar el entorno de desarrollo desde cero en tu máquina local:
 
-- Node.js instalado
-- pnpm instalado
-- PostgreSQL corriendo localmente
-- Base de datos local creada, por ejemplo `vitrina`
+### 1. Prerrequisitos
+Asegúrate de contar con las siguientes herramientas instaladas en tu sistema:
+* **Node.js** (versión 20 o superior recomendada)
+* **pnpm** (versión 11 o superior recomendada)
+* **PostgreSQL** corriendo localmente
 
-Ejemplo local usado por el proyecto:
+---
 
-```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/vitrina?schema=public"
-DIRECT_URL="postgresql://postgres:postgres@localhost:5432/vitrina?schema=public"
-```
-
-## Instalación
-
-Instalar dependencias:
-
+### 2. Clonar e Instalar Dependencias
+Clona el repositorio e instala las dependencias del proyecto utilizando `pnpm`:
 ```bash
 pnpm install
 ```
 
-Crear el archivo de entorno desde el ejemplo:
+---
 
-```bash
-cp .env.example .env
-```
+### 3. Configurar Variables de Entorno (`.env`)
+Duplica el archivo de ejemplo para crear tu configuración local:
 
-En Windows PowerShell:
+* En **Linux / macOS**:
+  ```bash
+  cp .env.example .env
+  ```
+* En **Windows (PowerShell)**:
+  ```powershell
+  copy .env.example .env
+  ```
 
-```powershell
-Copy-Item .env.example .env
-```
+Abre el archivo `.env` recién creado en tu editor y configura los siguientes parámetros clave:
+1. **Base de Datos**: Modifica las credenciales de conexión para apuntar a tu servidor PostgreSQL local (asegúrate de crear previamente la base de datos vacía, por ejemplo, llamada `vitrina`):
+   ```env
+   DATABASE_URL="postgresql://postgres:TU_CONTRASEÑA@localhost:5432/vitrina?schema=public"
+   DIRECT_URL="postgresql://postgres:TU_CONTRASEÑA@localhost:5432/vitrina?schema=public"
+   ```
+2. **Firma Secreta JWT**: Genera una firma segura aleatoria desde tu consola:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   ```
+   Copia el string resultante y asígnalo a la variable `JWT_SECRET` en tu archivo `.env`.
 
-Editar `.env` con las credenciales reales de PostgreSQL local.
+---
 
-## Base de datos
+### 4. Inicializar Base de Datos (Migraciones y Semilla)
+Ejecuta las migraciones de Prisma para crear la estructura de tablas y relaciones, e inicializa la base de datos con los datos geográficos de Chile (regiones y comunas) y usuarios de prueba:
 
-Aplicar migraciones en desarrollo:
+* **Configuración inicial**:
+  ```bash
+  pnpm db:migrate
+  pnpm db:seed
+  ```
+* **Restauración/Reset (Opcional)**: Si en cualquier momento deseas limpiar la base de datos por completo y volver a ejecutar las migraciones y la semilla desde cero, puedes correr:
+  ```bash
+  pnpm db:reset
+  ```
 
-```bash
-pnpm db:migrate
-```
+---
 
-Cargar datos base, como regiones y comunas:
-
-```bash
-pnpm db:seed
-```
-
-Si la base local queda en mal estado durante pruebas, se puede resetear:
-
-```bash
-pnpm db:reset
-```
-
-Este comando elimina y recrea la estructura de la base de datos usando las migraciones. También ejecuta el seed configurado por Prisma.
-
-Para producción o ambientes de despliegue se debe usar:
-
-```bash
-pnpm db:migrate:deploy
-```
-
-Ese comando solo aplica migraciones existentes. No crea migraciones nuevas.
-
-## Desarrollo
-
-Levantar el servidor en modo desarrollo:
-
+### 5. Levantar el Servidor de Desarrollo
+Inicia la aplicación en modo observador (`watch`):
 ```bash
 pnpm dev
 ```
 
-Por defecto usa el puerto configurado en `.env`:
+El servidor levantará por defecto en: **`http://localhost:4000`**
 
-```env
-PORT=4000
-```
+---
 
-## Producción
+### 6. Documentación Interactiva de la API (Swagger UI)
+Una vez que el servidor esté corriendo, puedes explorar, probar e interactuar con todos los endpoints disponibles del backend ingresando a:
+👉 **`http://localhost:4000/api-docs`**
 
-Aplicar migraciones pendientes:
+---
 
+## 🧪 Pruebas Automatizadas y Cobertura
+
+El proyecto cuenta con una suite completa de pruebas unitarias, de integración y endpoints HTTP utilizando **Vitest** y **Supertest**. Todas las llamadas a base de datos en los tests están mockeadas, por lo que las pruebas corren de manera aislada e inmediata.
+
+* **Ejecutar todos los tests**:
+  ```bash
+  pnpm run test
+  ```
+* **Ejecutar tests en modo watch**:
+  ```bash
+  pnpm run test:watch
+  ```
+* **Generar reporte de cobertura (Coverage)**:
+  ```bash
+  npx vitest run --coverage
+  ```
+  *(El reporte detallado se generará en la carpeta `/coverage` y el resumen se mostrará en la terminal).*
+
+---
+
+## 🛠️ Calidad de Código (Linter y Formateador)
+
+El proyecto utiliza **ESLint** (con configuración plana v9) y **Prettier** para mantener un código limpio, legible y libre de errores de estilo:
+
+* **Escanear problemas**:
+  ```bash
+  pnpm run lint
+  ```
+* **Corregir problemas de formato automáticamente**:
+  ```bash
+  pnpm run lint:fix
+  ```
+
+---
+
+## 📦 Producción y Despliegue
+
+Para desplegar la aplicación en entornos de producción o staging, sigue estas pautas:
+
+### 1. Variables de Entorno en Producción
+Asegúrate de configurar las siguientes variables críticas en tu proveedor de hosting:
+* `NODE_ENV="production"`
+* `COOKIE_SECURE=true` (requiere HTTPS activo)
+* `COOKIE_SAME_SITE="none"` (si el frontend se hospeda en un dominio distinto)
+
+### 2. Aplicar Migraciones Pendientes
+En producción **no** debes usar comandos de desarrollo o interactivos. Para aplicar de forma segura el historial de migraciones existente sobre la base de datos de producción, ejecuta:
 ```bash
 pnpm db:migrate:deploy
 ```
+*(Este comando corre `prisma migrate deploy` de forma silenciosa y segura).*
 
-Iniciar servidor:
-
+### 3. Iniciar el Servidor
+Para arrancar el backend de forma eficiente y sin herramientas de desarrollo (`nodemon`), ejecuta:
 ```bash
 pnpm start
 ```
 
-## Pruebas
+---
 
-Ejecutar pruebas:
+## 📁 Estructura del Repositorio
 
-```bash
-pnpm test
-```
-
-Modo watch:
-
-```bash
-pnpm test:watch
-```
-
-## Prisma
-
-El proyecto usa:
-
-- `prisma/schema.prisma` como definición actual del modelo de datos.
-- `prisma/migrations/` como historial de cambios de base de datos.
-- `prisma/seed.js` para datos base.
-- `prisma.config.js` para configurar schema, migraciones y seed.
-
-Cuando existe `prisma.config.js`, Prisma muestra el mensaje:
-
-```text
-Prisma config detected, skipping environment variable loading.
-```
-
-Eso significa que Prisma no carga `.env` automáticamente desde su flujo interno. En este proyecto el archivo `prisma.config.js` importa `dotenv/config`, por lo que las variables de `.env` igualmente quedan disponibles.
+A continuación se detalla la organización de carpetas del proyecto:
+* 📂 **`prisma/`**: Contiene la definición del esquema del modelo de datos (`schema.prisma`), el archivo de configuración del ORM (`prisma.config.js`), las migraciones generadas y el script de carga base (`seed.js`).
+* 📂 **`routes/`**: Controladores de enrutamiento agrupados por módulos (usuarios, publicaciones, ubicaciones, mensajería). Contiene la subcarpeta `docs/` con las especificaciones de Swagger.
+* 📂 **`services/`**: Lógica de negocio de la aplicación (consultas Prisma, procesamiento y guardado de imágenes, cálculo de métricas).
+* 📂 **`middlewares/`**: Interceptores de Express para validaciones de esquemas (Zod), límites de tasa de peticiones (Rate Limiters) y autenticación segura por tokens.
+* 📂 **`schemas/`**: Esquemas de validación Zod que protegen el backend validando la estructura de los datos de entrada.
+* 📂 **`tests/`**: Suite de pruebas dividida en pruebas de características (`feature/`), de integración (`integration/`) y unitarias (`unit/`).
+* 📂 **`lib/`**: Configuraciones generales de la app (puertos, CORS, carga de variables de entorno, etc.).
