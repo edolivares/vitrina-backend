@@ -16,6 +16,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/dummy?schema=public"
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/dummy?schema=public"
+      JWT_SECRET: "testing_jwt_secret_key_123_abc"
+      NODE_ENV: "test"
 
     strategy:
       matrix:
