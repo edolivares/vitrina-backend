@@ -1,4 +1,4 @@
-name: Backend Continuous Integration (CI)
+name: Tests
 
 on:
   push:
@@ -55,3 +55,11 @@ jobs:
 
       - name: Run Automated Tests
         run: pnpm run test
+
+      - name: Generate Coverage Report
+        run: pnpm exec vitest run --coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

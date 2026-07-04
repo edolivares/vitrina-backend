@@ -1,5 +1,9 @@
 # Vitrina Backend
 
+[![Backend CI](https://github.com/edolivares/vitrina-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/edolivares/vitrina-backend/actions) [![codecov](https://codecov.io/github/edolivares/vitrina-backend/graph/badge.svg?token=FP518U03XL)](https://codecov.io/github/edolivares/vitrina-backend)
+
+![NodeJS](https://img.shields.io/badge/Node.js-6DA55F?style=flat-square&logo=node.js&logoColor=white) ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white) ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-7A9B57?style=flat-square&logo=vitest&logoColor=white)
+
 API REST para el proyecto Vitrina Marketplace.
 
 ## Tecnologías
