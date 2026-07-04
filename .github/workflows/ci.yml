@@ -1,6 +1,8 @@
 name: Backend Continuous Integration (CI)
 
 on:
+  push:
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -9,6 +11,9 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout Code
@@ -22,8 +27,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: pnpm
+          node-version: 22
+          cache: 'pnpm'
 
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
@@ -42,4 +47,3 @@ jobs:
 
       - name: Run Automated Tests
         run: pnpm run test
-
