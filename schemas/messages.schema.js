@@ -5,7 +5,8 @@ export const chatIdParamSchema = z.object({
 });
 
 export const messageBodySchema = z.object({
-  content: z.string({ required_error: "El mensaje es obligatorio" })
+  content: z
+    .string({ required_error: "El mensaje es obligatorio" })
     .min(1, "El mensaje no puede estar vacio")
     .max(1000, "El mensaje no puede superar los 1000 caracteres"),
 });

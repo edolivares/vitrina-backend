@@ -62,7 +62,8 @@ export const authPaths = {
       },
       responses: {
         200: {
-          description: "Autenticación exitosa. Devuelve access token y setea cookie HttpOnly con refresh token.",
+          description:
+            "Autenticación exitosa. Devuelve access token y setea cookie HttpOnly con refresh token.",
           headers: {
             "Set-Cookie": {
               schema: { type: "string" },
@@ -86,7 +87,8 @@ export const authPaths = {
       summary: "Renovar access token",
       tags: ["Autenticación"],
       security: [{ RefreshTokenCookie: [] }],
-      description: "Usa la cookie HttpOnly `refreshToken` para emitir un nuevo access token. El refresh token dura 14 días y se valida contra su hash persistido.",
+      description:
+        "Usa la cookie HttpOnly `refreshToken` para emitir un nuevo access token. El refresh token dura 14 días y se valida contra su hash persistido.",
       responses: {
         200: {
           description: "Access token renovado con éxito",
@@ -110,7 +112,8 @@ export const authPaths = {
       summary: "Cerrar sesión",
       tags: ["Autenticación"],
       security: [{ RefreshTokenCookie: [] }],
-      description: "Revoca el refresh token asociado a la cookie actual y limpia la cookie del navegador.",
+      description:
+        "Revoca el refresh token asociado a la cookie actual y limpia la cookie del navegador.",
       responses: {
         200: {
           description: "Sesión cerrada correctamente",
@@ -166,7 +169,11 @@ export const authPaths = {
                 name: { type: "string", example: "Juan P. Pérez" },
                 email: { type: "string", format: "email", example: "juan.perez@email.com" },
                 bio: { type: "string", nullable: true, example: "Vendo barato y seguro." },
-                avatarId: { type: "string", format: "uuid", example: "99b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c" },
+                avatarId: {
+                  type: "string",
+                  format: "uuid",
+                  example: "99b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c",
+                },
               },
             },
           },

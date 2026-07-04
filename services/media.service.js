@@ -20,11 +20,8 @@ const buildMediaPath = ({ context, userId, postId, mediaId }) => {
   return `posts/unassigned/${userId}/${mediaId}.webp`;
 };
 
-const getMaxFileSizeBytes = (context) => (
-  context === "AVATAR"
-    ? config.media.avatarMaxFileSizeBytes
-    : config.media.postMaxFileSizeBytes
-);
+const getMaxFileSizeBytes = (context) =>
+  context === "AVATAR" ? config.media.avatarMaxFileSizeBytes : config.media.postMaxFileSizeBytes;
 
 const validateImageFile = ({ fileBuffer, mimeType, context }) => {
   if (!config.media.allowedMimeTypes.includes(mimeType)) {

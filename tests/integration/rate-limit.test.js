@@ -6,10 +6,23 @@ vi.mock("../../lib/database.js", () => ({
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
     city: { findMany: vi.fn(), findFirst: vi.fn() },
-    post: { count: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    post: {
+      count: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     media: { create: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     postMedia: { upsert: vi.fn(), deleteMany: vi.fn() },
-    savedPost: { upsert: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    savedPost: {
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     message: { deleteMany: vi.fn() },
   },
 }));
@@ -110,6 +123,8 @@ describe("Rate limit y CORS", () => {
       .send({ email: "test@email.com", password: "wrongpassword" });
 
     expect(res.statusCode).toBe(429);
-    expect(res.body.message).toBe("Demasiados intentos de inicio de sesion. Intenta nuevamente en unos minutos.");
+    expect(res.body.message).toBe(
+      "Demasiados intentos de inicio de sesion. Intenta nuevamente en unos minutos."
+    );
   });
 });

@@ -10,13 +10,26 @@ vi.mock("../../lib/database.js", () => ({
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
     city: { findMany: vi.fn(), findFirst: vi.fn() },
-    post: { count: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    post: {
+      count: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     media: { create: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     postMedia: { upsert: vi.fn(), deleteMany: vi.fn() },
-    savedPost: { upsert: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    savedPost: {
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     message: { deleteMany: vi.fn() },
     refreshToken: { create: vi.fn(), findUnique: vi.fn(), updateMany: vi.fn() },
-  }
+  },
 }));
 
 // Mock del servicio de autenticación
@@ -127,9 +140,7 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
   let token = "";
 
   it("Debería registrar un nuevo usuario exitosamente", async () => {
-    const res = await request(app)
-      .post("/api/auth/register")
-      .send(testUser);
+    const res = await request(app).post("/api/auth/register").send(testUser);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.status).toBe("success");
@@ -139,13 +150,11 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
   });
 
   it("Debería fallar al registrar un usuario con correo ya existente", async () => {
-    const res = await request(app)
-      .post("/api/auth/register")
-      .send({
-        name: "Juan Pérez Test",
-        email: "existing@email.com",
-        password: "securepassword123",
-      });
+    const res = await request(app).post("/api/auth/register").send({
+      name: "Juan Pérez Test",
+      email: "existing@email.com",
+      password: "securepassword123",
+    });
 
     expect(res.statusCode).toBe(400);
     expect(res.body.status).toBe("error");
@@ -153,12 +162,10 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
   });
 
   it("Debería iniciar sesión correctamente", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: testUser.email,
-        password: testUser.password,
-      });
+    const res = await request(app).post("/api/auth/login").send({
+      email: testUser.email,
+      password: testUser.password,
+    });
 
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");
@@ -199,12 +206,10 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
   });
 
   it("Debería fallar al iniciar sesión con contraseña incorrecta", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({
-        email: testUser.email,
-        password: "wrongpassword",
-      });
+    const res = await request(app).post("/api/auth/login").send({
+      email: testUser.email,
+      password: "wrongpassword",
+    });
 
     expect(res.statusCode).toBe(401);
     expect(res.body.status).toBe("error");
@@ -216,9 +221,7 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
   });
 
   it("Debería obtener el perfil del usuario autenticado", async () => {
-    const res = await request(app)
-      .get("/api/auth/me")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.status).toBe("success");

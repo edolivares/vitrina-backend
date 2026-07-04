@@ -5,11 +5,10 @@ import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
 import { deleteMedia, uploadImage } from "./media.service.js";
 
-const createAccessToken = (user) => jwt.sign(
-  { id: user.id, email: user.email },
-  config.jwt.secret,
-  { expiresIn: config.jwt.accessTokenExpiresIn }
-);
+const createAccessToken = (user) =>
+  jwt.sign({ id: user.id, email: user.email }, config.jwt.secret, {
+    expiresIn: config.jwt.accessTokenExpiresIn,
+  });
 
 const hashRefreshToken = (token) => crypto.createHash("sha256").update(token).digest("hex");
 

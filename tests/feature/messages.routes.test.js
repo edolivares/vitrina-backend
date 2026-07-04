@@ -9,11 +9,30 @@ vi.mock("../../lib/database.js", () => ({
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
     city: { findMany: vi.fn(), findFirst: vi.fn() },
-    post: { count: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
-    chat: { findUnique: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
+    post: {
+      count: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    chat: {
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     media: { create: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     postMedia: { upsert: vi.fn(), deleteMany: vi.fn() },
-    savedPost: { upsert: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    savedPost: {
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     message: { create: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
   },
 }));
@@ -69,7 +88,7 @@ describe("Mensajes y conversaciones REST API (Mocked)", () => {
     token = jwt.sign(
       { id: "test-uuid-123", email: "buyer@email.com" },
       config.jwt.secret || "testsecret",
-      { expiresIn: "1h" },
+      { expiresIn: "1h" }
     );
   });
 
@@ -85,9 +104,7 @@ describe("Mensajes y conversaciones REST API (Mocked)", () => {
   });
 
   it("Deberia listar conversaciones propias", async () => {
-    const res = await request(app)
-      .get("/api/chats")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).get("/api/chats").set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.data).toHaveLength(1);

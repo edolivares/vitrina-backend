@@ -68,9 +68,7 @@ export const mediaPaths = {
       summary: "Eliminar multimedia",
       tags: ["Multimedia"],
       security: [{ BearerAuth: [] }],
-      parameters: [
-        { name: "id", in: "path", required: true, schema: { type: "string" } },
-      ],
+      parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
       responses: {
         200: { description: "Archivo y registro eliminados" },
       },

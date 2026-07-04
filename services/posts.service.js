@@ -14,7 +14,9 @@ export const createDraft = async (userId) => {
   });
 
   if (draftCount >= MAX_DRAFT_POSTS) {
-    const err = new Error(`Has alcanzado el límite de ${MAX_DRAFT_POSTS} borradores activos. Debes publicar o eliminar algunos antes de poder crear otro.`);
+    const err = new Error(
+      `Has alcanzado el límite de ${MAX_DRAFT_POSTS} borradores activos. Debes publicar o eliminar algunos antes de poder crear otro.`
+    );
     err.statusCode = 403;
     throw err;
   }
@@ -71,7 +73,9 @@ export const updatePost = async (postId, userId, data) => {
     });
 
     if (activeCount >= MAX_ACTIVE_POSTS) {
-      const err = new Error(`Has alcanzado el límite de ${MAX_ACTIVE_POSTS} publicaciones activas. Archiva una antes de publicar otra.`);
+      const err = new Error(
+        `Has alcanzado el límite de ${MAX_ACTIVE_POSTS} publicaciones activas. Archiva una antes de publicar otra.`
+      );
       err.statusCode = 403;
       throw err;
     }
@@ -108,7 +112,18 @@ export const updatePost = async (postId, userId, data) => {
 };
 
 export const listPublished = async (filters = {}) => {
-  const { search, cityId, regionId, region, comuna, minPrice, maxPrice, condition, limit = 20, offset = 0 } = filters;
+  const {
+    search,
+    cityId,
+    regionId,
+    region,
+    comuna,
+    minPrice,
+    maxPrice,
+    condition,
+    limit = 20,
+    offset = 0,
+  } = filters;
 
   const whereClause = {
     deletedAt: null,
@@ -133,9 +148,9 @@ export const listPublished = async (filters = {}) => {
       region: {
         OR: [
           { name: { equals: region, mode: "insensitive" } },
-          { shortName: { equals: region, mode: "insensitive" } }
-        ]
-      }
+          { shortName: { equals: region, mode: "insensitive" } },
+        ],
+      },
     };
   }
 
@@ -200,7 +215,7 @@ export const getDetail = async (postId, userId) => {
         include: { region: true },
       },
       user: {
-        include: { avatar: true }
+        include: { avatar: true },
       },
       media: {
         include: { media: true },
@@ -404,7 +419,9 @@ export const reactivatePost = async (postId, userId) => {
   });
 
   if (activeCount >= MAX_ACTIVE_POSTS) {
-    const err = new Error(`Has alcanzado el límite de ${MAX_ACTIVE_POSTS} publicaciones activas. Archiva una antes de reactivar otra.`);
+    const err = new Error(
+      `Has alcanzado el límite de ${MAX_ACTIVE_POSTS} publicaciones activas. Archiva una antes de reactivar otra.`
+    );
     err.statusCode = 403;
     throw err;
   }

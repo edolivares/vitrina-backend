@@ -7,7 +7,11 @@ import { config } from "../lib/config.js";
 const normalizeStoragePath = (filePath) => {
   const normalizedPath = path.posix.normalize(filePath.replace(/\\/g, "/"));
 
-  if (normalizedPath.startsWith("../") || normalizedPath === ".." || path.isAbsolute(normalizedPath)) {
+  if (
+    normalizedPath.startsWith("../") ||
+    normalizedPath === ".." ||
+    path.isAbsolute(normalizedPath)
+  ) {
     throw new Error("Ruta de storage invalida");
   }
 
@@ -19,7 +23,9 @@ export class S3StorageService {
     const { accessKeyId, secretAccessKey, region, endpoint } = config.s3;
 
     if (!accessKeyId || !secretAccessKey || !endpoint) {
-      throw new Error("Storage S3 no configurado: faltan S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY o S3_ENDPOINT");
+      throw new Error(
+        "Storage S3 no configurado: faltan S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY o S3_ENDPOINT"
+      );
     }
 
     this.client = new S3Client({
@@ -52,24 +58,28 @@ export class S3StorageService {
   async deleteFiles(filePaths, bucket = config.storage.bucket) {
     if (!filePaths.length) return;
 
-    await this.client.send(new DeleteObjectsCommand({
-      Bucket: bucket,
-      Delete: {
-        Objects: filePaths.map((filePath) => ({ Key: normalizeStoragePath(filePath) })),
-        Quiet: true,
-      },
-    }));
+    await this.client.send(
+      new DeleteObjectsCommand({
+        Bucket: bucket,
+        Delete: {
+          Objects: filePaths.map((filePath) => ({ Key: normalizeStoragePath(filePath) })),
+          Quiet: true,
+        },
+      })
+    );
   }
 
   async fileExists(filePath, bucket = config.storage.bucket) {
     const storagePath = normalizeStoragePath(filePath);
 
     try {
-      await this.client.send(new GetObjectCommand({
-        Bucket: bucket,
-        Key: storagePath,
-        Range: "bytes=0-0",
-      }));
+      await this.client.send(
+        new GetObjectCommand({
+          Bucket: bucket,
+          Key: storagePath,
+          Range: "bytes=0-0",
+        })
+      );
       return true;
     } catch (error) {
       if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
@@ -123,6 +133,5 @@ export const buildPublicStorageUrl = (filePath, bucket = config.storage.bucket) 
   return `${baseUrl}/${bucket}/${filePath}`;
 };
 
-export const storageService = config.storage.strategy === "s3"
-  ? new S3StorageService()
-  : new LocalStorageService();
+export const storageService =
+  config.storage.strategy === "s3" ? new S3StorageService() : new LocalStorageService();

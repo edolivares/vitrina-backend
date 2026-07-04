@@ -10,12 +10,25 @@ vi.mock("../../lib/database.js", () => ({
     user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() },
     region: { findMany: vi.fn() },
     city: { findMany: vi.fn(), findFirst: vi.fn() },
-    post: { count: vi.fn(), create: vi.fn(), findUnique: vi.fn(), update: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    post: {
+      count: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
     media: { create: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), deleteMany: vi.fn() },
     postMedia: { upsert: vi.fn(), deleteMany: vi.fn() },
-    savedPost: { upsert: vi.fn(), findUnique: vi.fn(), delete: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
-    message: { deleteMany: vi.fn() }
-  }
+    savedPost: {
+      upsert: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      findMany: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    message: { deleteMany: vi.fn() },
+  },
 }));
 
 // Mock del estado de publicaciones
@@ -46,7 +59,10 @@ vi.mock("../../services/posts.service.js", () => {
         throw err;
       }
       mockDraftCount++;
-      const id = mockDraftCount === 1 ? "3c3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f" : `3c3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8${mockDraftCount}`;
+      const id =
+        mockDraftCount === 1
+          ? "3c3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f"
+          : `3c3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8${mockDraftCount}`;
       mockPostDetails[id] = {
         id,
         userId,
@@ -203,9 +219,7 @@ describe("Publicaciones REST API (Mocked)", () => {
   it("Debería inicializar un borrador exitosamente", async () => {
     // Resetear contador a 0 para el test del primer borrador
     mockDraftCount = 0;
-    const res = await request(app)
-      .post("/api/posts/draft")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).post("/api/posts/draft").set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.status).toBe("success");
@@ -215,9 +229,7 @@ describe("Publicaciones REST API (Mocked)", () => {
 
   it("Debería crear una publicación nueva directamente como borrador", async () => {
     mockDraftCount = 0;
-    const res = await request(app)
-      .post("/api/posts")
-      .set("Authorization", `Bearer ${token}`);
+    const res = await request(app).post("/api/posts").set("Authorization", `Bearer ${token}`);
 
     expect(res.statusCode).toBe(201);
     expect(res.body.status).toBe("success");

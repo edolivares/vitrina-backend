@@ -2,15 +2,13 @@ import crypto from "crypto";
 import { prisma } from "../lib/database.js";
 import { config } from "../lib/config.js";
 
-const BOT_USER_AGENT_PATTERN = /bot|crawler|spider|preview|facebookexternalhit|whatsapp|slackbot|telegrambot|discordbot|linkedinbot|twitterbot/i;
+const BOT_USER_AGENT_PATTERN =
+  /bot|crawler|spider|preview|facebookexternalhit|whatsapp|slackbot|telegrambot|discordbot|linkedinbot|twitterbot/i;
 
 const hashValue = (value) => {
   if (!value) return null;
 
-  return crypto
-    .createHmac("sha256", config.metrics.hashSecret)
-    .update(value)
-    .digest("hex");
+  return crypto.createHmac("sha256", config.metrics.hashSecret).update(value).digest("hex");
 };
 
 const getClientIp = (req) => {
@@ -99,29 +97,22 @@ export const getPostMetrics = async (postId, userId) => {
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const last48h = new Date(Date.now() - 48 * 60 * 60 * 1000);
 
-  const [
-    totalViews,
-    viewsLast24h,
-    viewsLast48h,
-    favorites,
-    conversations,
-    lastChat,
-  ] = await Promise.all([
-    prisma.postView.count({ where: { postId } }),
-    prisma.postView.count({ where: { postId, viewedAt: { gte: last24h } } }),
-    prisma.postView.count({ where: { postId, viewedAt: { gte: last48h } } }),
-    prisma.savedPost.count({ where: { postId } }),
-    prisma.chat.count({ where: { postId } }),
-    prisma.chat.findFirst({
-      where: { postId },
-      orderBy: { updatedAt: "desc" },
-      select: { updatedAt: true },
-    }),
-  ]);
+  const [totalViews, viewsLast24h, viewsLast48h, favorites, conversations, lastChat] =
+    await Promise.all([
+      prisma.postView.count({ where: { postId } }),
+      prisma.postView.count({ where: { postId, viewedAt: { gte: last24h } } }),
+      prisma.postView.count({ where: { postId, viewedAt: { gte: last48h } } }),
+      prisma.savedPost.count({ where: { postId } }),
+      prisma.chat.count({ where: { postId } }),
+      prisma.chat.findFirst({
+        where: { postId },
+        orderBy: { updatedAt: "desc" },
+        select: { updatedAt: true },
+      }),
+    ]);
 
-  const interestRate = totalViews > 0
-    ? Number((((favorites + conversations) / totalViews) * 100).toFixed(1))
-    : 0;
+  const interestRate =
+    totalViews > 0 ? Number((((favorites + conversations) / totalViews) * 100).toFixed(1)) : 0;
 
   return {
     postId,

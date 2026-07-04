@@ -114,9 +114,11 @@ describe("Avatar de usuario", () => {
       context: "AVATAR",
     });
 
-    await expect(updateUserProfile("899d3f61-2cb1-47e4-97c2-62cdb50a91d8", {
-      avatarId: "77a8b9c0-d1e2-4f4a-9b6c-7d8e9f0a1b2c",
-    })).rejects.toThrow("Avatar no encontrado");
+    await expect(
+      updateUserProfile("899d3f61-2cb1-47e4-97c2-62cdb50a91d8", {
+        avatarId: "77a8b9c0-d1e2-4f4a-9b6c-7d8e9f0a1b2c",
+      })
+    ).rejects.toThrow("Avatar no encontrado");
     expect(mocks.prisma.user.update).not.toHaveBeenCalled();
   });
 
@@ -130,9 +132,11 @@ describe("Avatar de usuario", () => {
       context: "POST",
     });
 
-    await expect(updateUserProfile(userId, {
-      avatarId: "77a8b9c0-d1e2-4f4a-9b6c-7d8e9f0a1b2c",
-    })).rejects.toThrow("Avatar no encontrado");
+    await expect(
+      updateUserProfile(userId, {
+        avatarId: "77a8b9c0-d1e2-4f4a-9b6c-7d8e9f0a1b2c",
+      })
+    ).rejects.toThrow("Avatar no encontrado");
     expect(mocks.prisma.user.update).not.toHaveBeenCalled();
   });
 });

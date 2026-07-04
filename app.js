@@ -6,6 +6,7 @@ import morgan from "morgan";
 import path from "path";
 import { config } from "./lib/config.js";
 import { serveSwagger, setupSwagger } from "./lib/swagger.js";
+import { prisma } from "./lib/database.js";
 import {
   apiRateLimiter,
   loginRateLimiter,
@@ -83,10 +84,30 @@ app.use("/api/profiles", profileRoutes);
 // API placeholder route
 app.get("/", (req, res) => {
   res.json({
-    message: "Bienvenido a la API REST de Vitrina.cl",
-    status: "online",
-    version: "1.0.0"
+    name: "vitrina-api",
+    version: "1.0.0",
+    environment: config.server.env,
   });
+});
+
+// Health check endpoint
+app.get("/health", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({
+      status: "UP",
+      database: "connected",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: "DOWN",
+      database: "disconnected",
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // 404 Route handler

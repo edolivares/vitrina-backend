@@ -77,24 +77,30 @@ describe("Metricas de publicaciones", () => {
       deletedAt: null,
     });
 
-    await expect(trackPostView({
-      postId,
-      viewerId: ownerId,
-      viewContext: { isBot: false },
-    })).resolves.toBe(false);
+    await expect(
+      trackPostView({
+        postId,
+        viewerId: ownerId,
+        viewContext: { isBot: false },
+      })
+    ).resolves.toBe(false);
 
-    await expect(trackPostView({
-      postId,
-      viewerId: null,
-      viewContext: { isBot: true },
-    })).resolves.toBe(false);
+    await expect(
+      trackPostView({
+        postId,
+        viewerId: null,
+        viewContext: { isBot: true },
+      })
+    ).resolves.toBe(false);
 
     mocks.prisma.postView.findFirst.mockResolvedValue({ id: "existing-view" });
-    await expect(trackPostView({
-      postId,
-      viewerId: null,
-      viewContext: { ipHash: "ip", userAgentHash: "ua", isBot: false },
-    })).resolves.toBe(false);
+    await expect(
+      trackPostView({
+        postId,
+        viewerId: null,
+        viewContext: { ipHash: "ip", userAgentHash: "ua", isBot: false },
+      })
+    ).resolves.toBe(false);
 
     expect(mocks.prisma.postView.create).not.toHaveBeenCalled();
   });

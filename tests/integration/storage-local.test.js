@@ -30,10 +30,7 @@ vi.mock("../../lib/database.js", () => ({
   },
 }));
 
-const loadStorageModule = async ({
-  avatarMaxFileSizeMb = "2",
-  postMaxFileSizeMb = "10",
-} = {}) => {
+const loadStorageModule = async ({ avatarMaxFileSizeMb = "2", postMaxFileSizeMb = "10" } = {}) => {
   vi.resetModules();
   process.env.STORAGE_STRATEGY = "local";
   process.env.STORAGE_LOCAL_DIR = "./tests/fixtures/storage-runtime";
@@ -76,9 +73,9 @@ describe("Storage local compatible con bucket", () => {
     const { LocalStorageService } = await loadStorageModule();
     const storage = new LocalStorageService();
 
-    await expect(storage.uploadFile("../escape.webp", Buffer.from("x"), "image/webp")).rejects.toThrow(
-      "Ruta de storage invalida"
-    );
+    await expect(
+      storage.uploadFile("../escape.webp", Buffer.from("x"), "image/webp")
+    ).rejects.toThrow("Ruta de storage invalida");
   });
 
   it("optimiza imagenes como WebP, genera placeholder y persiste url publica con path interno", async () => {
@@ -108,7 +105,9 @@ describe("Storage local compatible con bucket", () => {
     const storedPath = path.join(storageRoot, "media", ...media.path.split("/"));
     const storedImage = await fs.readFile(storedPath);
     expect(storedImage.length).toBe(media.size);
-    expect(prisma.media.create).toHaveBeenCalledWith({ data: expect.objectContaining({ path: media.path }) });
+    expect(prisma.media.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ path: media.path }),
+    });
   });
 
   it("genera placeholder base64 para imagenes de avatar", async () => {
@@ -135,13 +134,15 @@ describe("Storage local compatible con bucket", () => {
     await loadStorageModule();
     const { uploadImage } = await import("../../services/media.service.js");
 
-    await expect(uploadImage({
-      fileBuffer: Buffer.from("no-es-imagen"),
-      userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
-      context: "POST",
-      postId: "7bcb4b49-45f2-4d95-9005-7f0583b2f3a1",
-      mimeType: "text/plain",
-    })).rejects.toThrow("Tipo de archivo no permitido");
+    await expect(
+      uploadImage({
+        fileBuffer: Buffer.from("no-es-imagen"),
+        userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
+        context: "POST",
+        postId: "7bcb4b49-45f2-4d95-9005-7f0583b2f3a1",
+        mimeType: "text/plain",
+      })
+    ).rejects.toThrow("Tipo de archivo no permitido");
   });
 
   it("rechaza avatares que no sean cuadrados", async () => {
@@ -149,12 +150,14 @@ describe("Storage local compatible con bucket", () => {
     const { uploadImage } = await import("../../services/media.service.js");
     const fileBuffer = await createImageBuffer({ width: 80, height: 60, format: "png" });
 
-    await expect(uploadImage({
-      fileBuffer,
-      userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
-      context: "AVATAR",
-      mimeType: "image/png",
-    })).rejects.toThrow("El avatar debe ser una imagen cuadrada");
+    await expect(
+      uploadImage({
+        fileBuffer,
+        userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
+        context: "AVATAR",
+        mimeType: "image/png",
+      })
+    ).rejects.toThrow("El avatar debe ser una imagen cuadrada");
   });
 
   it("aplica limites de tamano distintos para avatar y post", async () => {
@@ -162,12 +165,14 @@ describe("Storage local compatible con bucket", () => {
     const { uploadImage } = await import("../../services/media.service.js");
     const fileBuffer = Buffer.alloc(1.5 * 1024 * 1024);
 
-    await expect(uploadImage({
-      fileBuffer,
-      userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
-      context: "AVATAR",
-      mimeType: "image/png",
-    })).rejects.toThrow("El archivo supera el tamano maximo permitido");
+    await expect(
+      uploadImage({
+        fileBuffer,
+        userId: "899d3f61-2cb1-47e4-97c2-62cdb50a91d8",
+        context: "AVATAR",
+        mimeType: "image/png",
+      })
+    ).rejects.toThrow("El archivo supera el tamano maximo permitido");
   });
 
   it("mantiene el orden indicado al vincular imagenes de publicacion", async () => {

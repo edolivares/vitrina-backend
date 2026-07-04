@@ -3,16 +3,17 @@ import { config } from "../lib/config.js";
 
 const toWindowMs = (minutes) => minutes * 60 * 1000;
 
-const createJsonRateLimiter = ({ windowMinutes, max, message, skip }) => rateLimit({
-  windowMs: toWindowMs(windowMinutes),
-  limit: max,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  skip,
-  message: {
-    message,
-  },
-});
+const createJsonRateLimiter = ({ windowMinutes, max, message, skip }) =>
+  rateLimit({
+    windowMs: toWindowMs(windowMinutes),
+    limit: max,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    skip,
+    message: {
+      message,
+    },
+  });
 
 export const apiRateLimiter = createJsonRateLimiter({
   ...config.rateLimit.public,

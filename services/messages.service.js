@@ -121,10 +121,7 @@ export const createOrGetPostChat = async (postId, userId) => {
 export const listOwnChats = async (userId) => {
   const chats = await prisma.chat.findMany({
     where: {
-      OR: [
-        { sellerId: userId },
-        { buyerId: userId },
-      ],
+      OR: [{ sellerId: userId }, { buyerId: userId }],
     },
     orderBy: { updatedAt: "desc" },
     include: chatInclude,
@@ -144,9 +141,7 @@ export const listPostChats = async (postId, userId) => {
     throw err;
   }
 
-  const whereClause = post.userId === userId
-    ? { postId }
-    : { postId, buyerId: userId };
+  const whereClause = post.userId === userId ? { postId } : { postId, buyerId: userId };
 
   const chats = await prisma.chat.findMany({
     where: whereClause,

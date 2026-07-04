@@ -4,14 +4,34 @@ export const postPaths = {
       summary: "Listar publicaciones activas (Galería pública)",
       tags: ["Publicaciones"],
       parameters: [
-        { name: "search", in: "query", schema: { type: "string" }, description: "Búsqueda por palabra clave" },
+        {
+          name: "search",
+          in: "query",
+          schema: { type: "string" },
+          description: "Búsqueda por palabra clave",
+        },
         { name: "cityId", in: "query", schema: { type: "integer" }, description: "ID de comuna" },
         { name: "regionId", in: "query", schema: { type: "integer" }, description: "ID de región" },
         { name: "minPrice", in: "query", schema: { type: "number" }, description: "Precio mínimo" },
         { name: "maxPrice", in: "query", schema: { type: "number" }, description: "Precio máximo" },
-        { name: "condition", in: "query", schema: { type: "string", enum: ["NEW", "USED"] }, description: "CondiciÃ³n del artÃ­culo" },
-        { name: "limit", in: "query", schema: { type: "integer" }, description: "Paginación limit" },
-        { name: "offset", in: "query", schema: { type: "integer" }, description: "Paginación offset" },
+        {
+          name: "condition",
+          in: "query",
+          schema: { type: "string", enum: ["NEW", "USED"] },
+          description: "CondiciÃ³n del artÃ­culo",
+        },
+        {
+          name: "limit",
+          in: "query",
+          schema: { type: "integer" },
+          description: "Paginación limit",
+        },
+        {
+          name: "offset",
+          in: "query",
+          schema: { type: "integer" },
+          description: "Paginación offset",
+        },
       ],
       responses: {
         200: {
@@ -38,7 +58,13 @@ export const postPaths = {
       summary: "Ver detalles de una publicación",
       tags: ["Publicaciones"],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" }, description: "UUID de la publicación" },
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+          description: "UUID de la publicación",
+        },
       ],
       responses: {
         200: { description: "Detalles del post" },
@@ -50,7 +76,13 @@ export const postPaths = {
       tags: ["Publicaciones"],
       security: [{ BearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" }, description: "UUID de la publicación" },
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+          description: "UUID de la publicación",
+        },
       ],
       requestBody: {
         required: true,
@@ -82,7 +114,13 @@ export const postPaths = {
       tags: ["Publicaciones"],
       security: [{ BearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" }, description: "UUID de la publicación" },
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+          description: "UUID de la publicación",
+        },
       ],
       responses: {
         200: { description: "Eliminado con éxito" },
@@ -96,7 +134,12 @@ export const postPaths = {
       tags: ["Publicaciones"],
       security: [{ BearerAuth: [] }],
       parameters: [
-        { name: "status", in: "query", schema: { type: "string" }, description: "Filtrar por estado" },
+        {
+          name: "status",
+          in: "query",
+          schema: { type: "string" },
+          description: "Filtrar por estado",
+        },
         { name: "limit", in: "query", schema: { type: "integer" } },
         { name: "offset", in: "query", schema: { type: "integer" } },
       ],
@@ -124,7 +167,13 @@ export const postPaths = {
       tags: ["Publicaciones"],
       security: [{ BearerAuth: [] }],
       parameters: [
-        { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" }, description: "UUID de la publicación" },
+        {
+          name: "id",
+          in: "path",
+          required: true,
+          schema: { type: "string", format: "uuid" },
+          description: "UUID de la publicación",
+        },
       ],
       responses: {
         200: {

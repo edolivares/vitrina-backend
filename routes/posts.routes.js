@@ -96,123 +96,138 @@ router.get("/", async (req, res, next) => {
 });
 
 // 4. Vincular media a post
-router.post("/:postId/media", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
-  try {
-    const postId = req.validatedParams.postId;
-    const contentType = req.headers["content-type"] || "";
+router.post(
+  "/:postId/media",
+  authMiddleware,
+  validateParams(postIdParamSchema),
+  async (req, res, next) => {
+    try {
+      const postId = req.validatedParams.postId;
+      const contentType = req.headers["content-type"] || "";
 
-    if (contentType.includes("multipart/form-data")) {
-      const parsed = await parseMultipart(req, { maxBytes: config.media.postMaxFileSizeBytes });
-      const file = parsed.files.file;
-      const sortOrder = parsed.fields.sortOrder ? Number(parsed.fields.sortOrder) : 0;
+      if (contentType.includes("multipart/form-data")) {
+        const parsed = await parseMultipart(req, { maxBytes: config.media.postMaxFileSizeBytes });
+        const file = parsed.files.file;
+        const sortOrder = parsed.fields.sortOrder ? Number(parsed.fields.sortOrder) : 0;
 
-      if (!file) {
-        return res.status(400).json({
-          status: "error",
-          message: "No se proporciono ningun archivo de imagen en el campo 'file'",
+        if (!file) {
+          return res.status(400).json({
+            status: "error",
+            message: "No se proporciono ningun archivo de imagen en el campo 'file'",
+          });
+        }
+
+        const media = await uploadImage({
+          fileBuffer: file.buffer,
+          userId: req.user.id,
+          context: "POST",
+          postId,
+          mimeType: file.mimeType,
+        });
+
+        const association = await linkMediaToPost({
+          postId,
+          mediaId: media.id,
+          sortOrder,
+          userId: req.user.id,
+        });
+
+        return res.status(201).json({
+          status: "success",
+          message: "Imagen subida y vinculada correctamente a la publicacion",
+          data: {
+            id: media.id,
+            postId,
+            url: media.url,
+            placeholder: media.placeholder,
+            width: media.width,
+            height: media.height,
+            size: media.size,
+            mimeType: media.mimeType,
+            context: media.context,
+            sortOrder: association.sortOrder,
+          },
         });
       }
 
-      const media = await uploadImage({
-        fileBuffer: file.buffer,
-        userId: req.user.id,
-        context: "POST",
-        postId,
-        mimeType: file.mimeType,
-      });
+      const { mediaId, sortOrder } = linkMediaSchema.parse(req.body);
 
-      const association = await linkMediaToPost({
+      await linkMediaToPost({
         postId,
-        mediaId: media.id,
+        mediaId,
         sortOrder,
         userId: req.user.id,
       });
 
-      return res.status(201).json({
+      res.status(200).json({
         status: "success",
-        message: "Imagen subida y vinculada correctamente a la publicacion",
-        data: {
-          id: media.id,
-          postId,
-          url: media.url,
-          placeholder: media.placeholder,
-          width: media.width,
-          height: media.height,
-          size: media.size,
-          mimeType: media.mimeType,
-          context: media.context,
-          sortOrder: association.sortOrder,
-        },
+        message: "Archivo multimedia vinculado correctamente a la publicacion",
       });
+    } catch (error) {
+      if (error.errors) {
+        return res.status(400).json({
+          status: "error",
+          message: "Error de validacion",
+          details: error.errors.map((e) => e.message),
+        });
+      }
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-
-    const { mediaId, sortOrder } = linkMediaSchema.parse(req.body);
-
-    await linkMediaToPost({
-      postId,
-      mediaId,
-      sortOrder,
-      userId: req.user.id,
-    });
-
-    res.status(200).json({
-      status: "success",
-      message: "Archivo multimedia vinculado correctamente a la publicacion",
-    });
-  } catch (error) {
-    if (error.errors) {
-      return res.status(400).json({
-        status: "error",
-        message: "Error de validacion",
-        details: error.errors.map((e) => e.message),
-      });
-    }
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
-      });
-    }
-    next(error);
   }
-});
+);
 
 // 5. Detalle de publicación (Acceso condicional / público)
-router.post("/:postId/chats", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
-  try {
-    const result = await createOrGetPostChat(req.validatedParams.postId, req.user.id);
-    res.status(result.created ? 201 : 200).json({
-      status: "success",
-      data: result.chat,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.post(
+  "/:postId/chats",
+  authMiddleware,
+  validateParams(postIdParamSchema),
+  async (req, res, next) => {
+    try {
+      const result = await createOrGetPostChat(req.validatedParams.postId, req.user.id);
+      res.status(result.created ? 201 : 200).json({
+        status: "success",
+        data: result.chat,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
-router.get("/:postId/chats", authMiddleware, validateParams(postIdParamSchema), async (req, res, next) => {
-  try {
-    const chats = await listPostChats(req.validatedParams.postId, req.user.id);
-    res.status(200).json({
-      status: "success",
-      data: chats,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.get(
+  "/:postId/chats",
+  authMiddleware,
+  validateParams(postIdParamSchema),
+  async (req, res, next) => {
+    try {
+      const chats = await listPostChats(req.validatedParams.postId, req.user.id);
+      res.status(200).json({
+        status: "success",
+        data: chats,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
 router.get("/:id", validateParams(uuidParamSchema), async (req, res, next) => {
   try {
@@ -255,43 +270,54 @@ router.get("/:id", validateParams(uuidParamSchema), async (req, res, next) => {
   }
 });
 
-router.get("/:id/metrics", authMiddleware, validateParams(uuidParamSchema), async (req, res, next) => {
-  try {
-    const metrics = await getPostMetrics(req.validatedParams.id, req.user.id);
-    res.status(200).json({
-      status: "success",
-      data: metrics,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.get(
+  "/:id/metrics",
+  authMiddleware,
+  validateParams(uuidParamSchema),
+  async (req, res, next) => {
+    try {
+      const metrics = await getPostMetrics(req.validatedParams.id, req.user.id);
+      res.status(200).json({
+        status: "success",
+        data: metrics,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
 // 6. Guardar y Publicar / Actualizar
-router.put("/:id", authMiddleware, validateParams(uuidParamSchema), validateBody(updatePostSchema), async (req, res, next) => {
-  try {
-    const postId = req.validatedParams.id;
-    const updated = await updatePost(postId, req.user.id, req.validatedBody);
-    res.status(200).json({
-      status: "success",
-      data: updated,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.put(
+  "/:id",
+  authMiddleware,
+  validateParams(uuidParamSchema),
+  validateBody(updatePostSchema),
+  async (req, res, next) => {
+    try {
+      const postId = req.validatedParams.id;
+      const updated = await updatePost(postId, req.user.id, req.validatedBody);
+      res.status(200).json({
+        status: "success",
+        data: updated,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
 // 7. Eliminar publicación (Soft Delete)
 router.delete("/:id", authMiddleware, validateParams(uuidParamSchema), async (req, res, next) => {
@@ -314,45 +340,55 @@ router.delete("/:id", authMiddleware, validateParams(uuidParamSchema), async (re
 });
 
 // 8. Archivar publicación
-router.patch("/:id/archive", authMiddleware, validateParams(uuidParamSchema), async (req, res, next) => {
-  try {
-    const postId = req.validatedParams.id;
-    const result = await archivePost(postId, req.user.id);
-    res.status(200).json({
-      status: "success",
-      message: "Publicación archivada exitosamente",
-      data: result,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.patch(
+  "/:id/archive",
+  authMiddleware,
+  validateParams(uuidParamSchema),
+  async (req, res, next) => {
+    try {
+      const postId = req.validatedParams.id;
+      const result = await archivePost(postId, req.user.id);
+      res.status(200).json({
+        status: "success",
+        message: "Publicación archivada exitosamente",
+        data: result,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
 // 9. Reactivar publicación
-router.patch("/:id/reactivate", authMiddleware, validateParams(uuidParamSchema), async (req, res, next) => {
-  try {
-    const postId = req.validatedParams.id;
-    const result = await reactivatePost(postId, req.user.id);
-    res.status(200).json({
-      status: "success",
-      message: "Publicación reactivada exitosamente",
-      data: result,
-    });
-  } catch (error) {
-    if (error.statusCode) {
-      return res.status(error.statusCode).json({
-        status: "error",
-        message: error.message,
+router.patch(
+  "/:id/reactivate",
+  authMiddleware,
+  validateParams(uuidParamSchema),
+  async (req, res, next) => {
+    try {
+      const postId = req.validatedParams.id;
+      const result = await reactivatePost(postId, req.user.id);
+      res.status(200).json({
+        status: "success",
+        message: "Publicación reactivada exitosamente",
+        data: result,
       });
+    } catch (error) {
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          status: "error",
+          message: error.message,
+        });
+      }
+      next(error);
     }
-    next(error);
   }
-});
+);
 
 export default router;
