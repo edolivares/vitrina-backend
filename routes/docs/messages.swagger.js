@@ -72,4 +72,17 @@ export const messagePaths = {
       },
     },
   },
+  "/api/chats/{chatId}/read": {
+    patch: {
+      summary: "Marcar una conversacion como leida",
+      tags: ["Mensajes"],
+      security: [{ BearerAuth: [] }],
+      parameters: [
+        { name: "chatId", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+      ],
+      responses: {
+        200: { description: "Conversacion marcada como leida" },
+      },
+    },
+  },
 };

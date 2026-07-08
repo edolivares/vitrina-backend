@@ -38,7 +38,7 @@ const loadStorageModule = async ({ avatarMaxFileSizeMb = "2", postMaxFileSizeMb 
   process.env.CDN_BASE_URL = "http://localhost:4000/storage";
   process.env.MEDIA_AVATAR_MAX_FILE_SIZE_MB = avatarMaxFileSizeMb;
   process.env.MEDIA_POST_MAX_FILE_SIZE_MB = postMaxFileSizeMb;
-  process.env.MEDIA_ALLOWED_MIME_TYPES = "image/jpeg,image/png,image/webp";
+  process.env.MEDIA_ALLOWED_MIME_TYPES = "image/jpeg,image/png,image/webp,image/avif";
 
   return import("../../services/storage.service.js");
 };

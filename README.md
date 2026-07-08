@@ -21,10 +21,12 @@ Asegúrate de contar con las siguientes herramientas instaladas en tu sistema:
 ---
 
 ### 2. Clonar e Instalar Dependencias
-Clona el repositorio e instala las dependencias del proyecto utilizando `pnpm`:
+Clona el repositorio e instala las dependencias del proyecto utilizando `pnpm`, y luego genera el cliente de Prisma:
 ```bash
 pnpm install
+pnpm exec prisma generate
 ```
+*(Nota: El comando `prisma generate` es indispensable para compilar localmente los conectores de la base de datos dentro de tu `node_modules`).*
 
 ---
 

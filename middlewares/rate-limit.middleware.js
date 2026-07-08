@@ -9,7 +9,13 @@ const createJsonRateLimiter = ({ windowMinutes, max, message, skip }) =>
     limit: max,
     standardHeaders: "draft-8",
     legacyHeaders: false,
-    skip,
+    skip: (req, res) => {
+      // Omitir límite de solicitudes únicamente en desarrollo local (no en testing)
+      if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+        return true;
+      }
+      return skip ? skip(req, res) : false;
+    },
     message: {
       message,
     },

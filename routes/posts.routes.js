@@ -189,7 +189,11 @@ router.post(
   validateParams(postIdParamSchema),
   async (req, res, next) => {
     try {
-      const result = await createOrGetPostChat(req.validatedParams.postId, req.user.id);
+      const result = await createOrGetPostChat(
+        req.validatedParams.postId,
+        req.user.id,
+        req.header("X-Pusher-Socket-Id")
+      );
       res.status(result.created ? 201 : 200).json({
         status: "success",
         data: result.chat,

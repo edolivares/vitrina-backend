@@ -23,6 +23,7 @@ import mediaRoutes from "./routes/media.routes.js";
 import savedRoutes from "./routes/saved.routes.js";
 import messageRoutes from "./routes/messages.routes.js";
 import profileRoutes from "./routes/profiles.routes.js";
+import realtimeRoutes from "./routes/realtime.routes.js";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(morgan("dev"));
 
 // Serve static uploads
@@ -70,14 +72,15 @@ app.use("/api/media/upload", mediaRateLimiter);
 app.use("/api/posts/:postId/media", mediaRateLimiter);
 app.use("/api/posts", privateWriteRateLimiter);
 app.use("/api/media", privateWriteRateLimiter);
-app.use("/api/saved-posts", privateWriteRateLimiter);
+app.use(["/api/saved-posts", "/api/saved"], privateWriteRateLimiter);
 app.use("/api/chats", privateWriteRateLimiter);
 app.use("/api/auth/me", privateWriteRateLimiter);
 app.use("/api/auth", authRoutes);
+app.use("/api/realtime", realtimeRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/media", mediaRoutes);
-app.use("/api/saved-posts", savedRoutes);
+app.use(["/api/saved-posts", "/api/saved"], savedRoutes);
 app.use("/api/chats", messageRoutes);
 app.use("/api/profiles", profileRoutes);
 

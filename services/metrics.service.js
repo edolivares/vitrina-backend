@@ -106,8 +106,8 @@ export const getPostMetrics = async (postId, userId) => {
       prisma.chat.count({ where: { postId } }),
       prisma.chat.findFirst({
         where: { postId },
-        orderBy: { updatedAt: "desc" },
-        select: { updatedAt: true },
+        orderBy: { lastMessageAt: "desc" },
+        select: { lastMessageAt: true },
       }),
     ]);
 
@@ -124,6 +124,6 @@ export const getPostMetrics = async (postId, userId) => {
     favorites,
     conversations,
     interestRate,
-    lastContactAt: lastChat?.updatedAt || null,
+    lastContactAt: lastChat?.lastMessageAt || null,
   };
 };

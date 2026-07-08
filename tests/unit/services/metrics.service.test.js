@@ -122,7 +122,7 @@ describe("Metricas de publicaciones", () => {
       .mockResolvedValueOnce(20);
     mocks.prisma.savedPost.count.mockResolvedValue(8);
     mocks.prisma.chat.count.mockResolvedValue(2);
-    mocks.prisma.chat.findFirst.mockResolvedValue({ updatedAt: lastContactAt });
+    mocks.prisma.chat.findFirst.mockResolvedValue({ lastMessageAt: lastContactAt });
 
     const metrics = await getPostMetrics(postId, ownerId);
 
@@ -137,6 +137,11 @@ describe("Metricas de publicaciones", () => {
       conversations: 2,
       interestRate: 10,
       lastContactAt,
+    });
+    expect(mocks.prisma.chat.findFirst).toHaveBeenCalledWith({
+      where: { postId },
+      orderBy: { lastMessageAt: "desc" },
+      select: { lastMessageAt: true },
     });
   });
 });

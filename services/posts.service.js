@@ -264,6 +264,7 @@ export const getDetail = async (postId, userId) => {
       avatarUrl: post.user.avatar?.url || null,
     },
     gallery: post.media.map((pm) => ({
+      id: pm.media.id,
       url: pm.media.url,
       placeholder: pm.media.placeholder,
       width: pm.media.width,
@@ -324,6 +325,9 @@ export const listOwn = async (userId, filters = {}) => {
         include: { media: true },
         take: 1,
       },
+      _count: {
+        select: { views: true },
+      },
     },
   });
 
@@ -343,6 +347,7 @@ export const listOwn = async (userId, filters = {}) => {
           }
         : null,
       createdAt: post.createdAt,
+      viewsCount: post._count?.views || 0,
     };
   });
 };

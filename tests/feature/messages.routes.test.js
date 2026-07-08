@@ -52,6 +52,7 @@ const mockChat = {
     name: "Diego Valdivia",
   },
   lastMessage: "Conversacion iniciada",
+  lastMessageAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -79,6 +80,7 @@ vi.mock("../../services/messages.service.js", () => ({
     content,
     createdAt: new Date().toISOString(),
   })),
+  markChatAsRead: vi.fn(async () => ({ success: true })),
 }));
 
 describe("Mensajes y conversaciones REST API (Mocked)", () => {
@@ -134,5 +136,14 @@ describe("Mensajes y conversaciones REST API (Mocked)", () => {
 
     expect(sendRes.statusCode).toBe(201);
     expect(sendRes.body.data.content).toBe("Me interesa coordinar entrega.");
+  });
+
+  it("Deberia marcar una conversacion como leida", async () => {
+    const res = await request(app)
+      .patch(`/api/chats/${mockChat.id}/read`)
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data.success).toBe(true);
   });
 });
