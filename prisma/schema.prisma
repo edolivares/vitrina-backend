@@ -1,6 +1,6 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
@@ -19,14 +19,16 @@ model User {
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
-  avatar   Media?    @relation("UserAvatar", fields: [avatarId], references: [id])
-  posts    Post[]
-  savedPosts SavedPost[]
-  sentMsgs Message[] @relation("SentMessages")
-  sellerChats Chat[] @relation("SellerChats")
-  buyerChats Chat[] @relation("BuyerChats")
-  uploads  Media[]   @relation("UploadedMedia")
-  refreshTokens RefreshToken[]
+  avatar          Media?         @relation("UserAvatar", fields: [avatarId], references: [id])
+  posts           Post[]
+  savedPosts      SavedPost[]
+  sentMsgs        Message[]      @relation("SentMessages")
+  sellerChats     Chat[]         @relation("SellerChats")
+  buyerChats      Chat[]         @relation("BuyerChats")
+  uploads         Media[]        @relation("UploadedMedia")
+  refreshTokens   RefreshToken[]
+  reviewsGiven    Review[]       @relation("BuyerReviews")
+  reviewsReceived Review[]       @relation("SellerReviews")
 
   @@map("users")
 }
@@ -62,27 +64,30 @@ enum PostCondition {
 }
 
 model Post {
-  id          String     @id @default(uuid()) @db.Uuid
-  userId      String     @map("user_id") @db.Uuid
-  cityId      Int        @map("city_id")
+  id          String        @id @default(uuid()) @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  cityId      Int           @map("city_id")
   title       String
-  description String     @db.Text
-  price       Decimal    @db.Decimal(12, 2)
-  latitude    Decimal?   @db.Decimal(9, 6)
-  longitude   Decimal?   @db.Decimal(9, 6)
+  description String        @db.Text
+  price       Decimal       @db.Decimal(12, 2)
+  latitude    Decimal?      @db.Decimal(9, 6)
+  longitude   Decimal?      @db.Decimal(9, 6)
   /// Estado actual del post. Ver enum PostStatus para reglas de negocio de cada estado.
-  status      PostStatus @default(PUBLISHED)
-  condition   PostCondition @default(USED)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-  deletedAt   DateTime?  @map("deleted_at")
+  status           PostStatus    @default(PUBLISHED)
+  condition        PostCondition @default(USED)
+  /// Clave de idempotencia generada por el cliente al crear un borrador. Evita duplicados por doble-request.
+  idempotencyKey   String?       @unique @map("idempotency_key")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+  deletedAt        DateTime?     @map("deleted_at")
 
-  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  city     City        @relation(fields: [cityId], references: [id])
-  media    PostMedia[]
-  savedBy  SavedPost[]
-  chats    Chat[]
-  views    PostView[]
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city    City        @relation(fields: [cityId], references: [id])
+  media   PostMedia[]
+  savedBy SavedPost[]
+  chats   Chat[]
+  views   PostView[]
+  reviews Review[]
 
   @@map("posts")
 }
@@ -109,20 +114,20 @@ enum MediaContext {
 }
 
 model Media {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  url       String
-  path      String?
-  context   MediaContext
+  id          String       @id @default(uuid()) @db.Uuid
+  userId      String       @map("user_id") @db.Uuid
+  url         String
+  path        String?
+  context     MediaContext
   placeholder String?
-  width     Int?
-  height    Int?
-  size      Int?
-  mimeType  String?  @map("mime_type")
-  createdAt DateTime @default(now()) @map("created_at")
-  posts     PostMedia[]
+  width       Int?
+  height      Int?
+  size        Int?
+  mimeType    String?      @map("mime_type")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  posts       PostMedia[]
 
-  uploader User   @relation("UploadedMedia", fields: [userId], references: [id], onDelete: Cascade)
+  uploader    User   @relation("UploadedMedia", fields: [userId], references: [id], onDelete: Cascade)
   usersAvatar User[] @relation("UserAvatar")
 
   @@map("media")
@@ -189,6 +194,26 @@ model Message {
   sender User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@map("messages")
+}
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+  sellerId  String   @map("seller_id") @db.Uuid
+  buyerId   String   @map("buyer_id") @db.Uuid
+  postId    String?  @map("post_id") @db.Uuid
+  rating    Int
+  comment   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  seller User  @relation("SellerReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User  @relation("BuyerReviews", fields: [buyerId], references: [id], onDelete: Cascade)
+  post   Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([sellerId, createdAt])
+  @@index([buyerId])
+  @@index([postId])
+  @@map("reviews")
 }
 
 model Region {

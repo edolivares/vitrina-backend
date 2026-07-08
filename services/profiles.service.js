@@ -20,11 +20,49 @@ const formatPost = (post) => {
   };
 };
 
+const buildReviewSummary = (reviews) =>
+  [5, 4, 3, 2, 1].map((rating) => ({
+    rating,
+    count: reviews.filter((review) => review.rating === rating).length,
+  }));
+
+const getReviewScore = (reviews) => {
+  if (reviews.length === 0) return null;
+  const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+  return Number((total / reviews.length).toFixed(1));
+};
+
+const formatReview = (review) => ({
+  id: review.id,
+  author: review.buyer.name,
+  rating: review.rating,
+  comment: review.comment,
+  date: review.createdAt,
+  post: review.post
+    ? {
+        id: review.post.id,
+        title: review.post.title,
+      }
+    : null,
+});
+
 export const getPublicProfile = async (profileId) => {
   const user = await prisma.user.findUnique({
     where: { id: profileId },
     include: {
       avatar: true,
+      reviewsReceived: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          buyer: true,
+          post: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
       posts: {
         where: {
           status: "PUBLISHED",
@@ -63,10 +101,10 @@ export const getPublicProfile = async (profileId) => {
           }
         : null,
       joinedAt: user.createdAt,
-      reviewScore: null,
-      reviewCount: 0,
-      reviewSummary: [],
-      recentReviews: [],
+      reviewScore: getReviewScore(user.reviewsReceived),
+      reviewCount: user.reviewsReceived.length,
+      reviewSummary: buildReviewSummary(user.reviewsReceived),
+      reviews: user.reviewsReceived.slice(0, 5).map(formatReview),
     },
     posts: user.posts.map(formatPost),
   };

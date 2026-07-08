@@ -76,8 +76,18 @@ const notifyRealtime = async (channels, eventName, payload, socketId = null) => 
 
 const notifyChatChanged = async (chat, socketId = null, eventName = "chat.updated") => {
   await Promise.all([
-    notifyRealtime(userChannel(chat.sellerId), eventName, { chat: formatChat(chat, chat.sellerId) }, socketId),
-    notifyRealtime(userChannel(chat.buyerId), eventName, { chat: formatChat(chat, chat.buyerId) }, socketId),
+    notifyRealtime(
+      userChannel(chat.sellerId),
+      eventName,
+      { chat: formatChat(chat, chat.sellerId) },
+      socketId
+    ),
+    notifyRealtime(
+      userChannel(chat.buyerId),
+      eventName,
+      { chat: formatChat(chat, chat.buyerId) },
+      socketId
+    ),
   ]);
 };
 

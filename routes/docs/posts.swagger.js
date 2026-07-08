@@ -43,9 +43,66 @@ export const postPaths = {
       summary: "Crear publicación nueva como borrador",
       tags: ["Publicaciones"],
       security: [{ BearerAuth: [] }],
+      requestBody: {
+        required: false,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                idempotencyKey: {
+                  type: "string",
+                  format: "uuid",
+                  description:
+                    "Clave única para evitar la creación de borradores duplicados en peticiones concurrentes.",
+                },
+              },
+            },
+          },
+        },
+      },
       responses: {
         201: {
           description: "Borrador creado con UUID de publicación",
+        },
+        200: {
+          description: "Borrador existente recuperado mediante clave de idempotencia",
+        },
+        403: {
+          description: "Límite de borradores activos alcanzado",
+        },
+      },
+    },
+  },
+  "/api/posts/draft": {
+    post: {
+      summary: "Crear publicación nueva como borrador (Alias)",
+      tags: ["Publicaciones"],
+      security: [{ BearerAuth: [] }],
+      requestBody: {
+        required: false,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                idempotencyKey: {
+                  type: "string",
+                  format: "uuid",
+                  description:
+                    "Clave única para evitar la creación de borradores duplicados en peticiones concurrentes.",
+                },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        201: {
+          description: "Borrador creado con UUID de publicación",
+        },
+        200: {
+          description: "Borrador existente recuperado mediante clave de idempotencia",
         },
         403: {
           description: "Límite de borradores activos alcanzado",

@@ -305,6 +305,15 @@
             },
             "method": "POST",
             "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idempotencyKey\": \"d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/posts/draft",
               "host": [

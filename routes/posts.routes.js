@@ -24,10 +24,11 @@ const router = Router();
 
 const createDraftHandler = async (req, res, next) => {
   try {
-    const draft = await createDraft(req.user.id);
-    res.status(201).json({
+    const idempotencyKey = req.body?.idempotencyKey || null;
+    const { draft, created } = await createDraft(req.user.id, idempotencyKey);
+    res.status(created ? 201 : 200).json({
       status: "success",
-      message: "Borrador de publicación inicializado",
+      message: created ? "Borrador de publicación inicializado" : "Borrador existente recuperado",
       data: {
         id: draft.id,
         userId: draft.userId,

@@ -2,7 +2,12 @@ import { Router } from "express";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { validateBody, validateParams } from "../middlewares/validate.middleware.js";
 import { chatIdParamSchema, messageBodySchema } from "../schemas/messages.schema.js";
-import { listOwnChats, listChatMessages, sendChatMessage, markChatAsRead } from "../services/messages.service.js";
+import {
+  listOwnChats,
+  listChatMessages,
+  sendChatMessage,
+  markChatAsRead,
+} from "../services/messages.service.js";
 
 const router = Router();
 

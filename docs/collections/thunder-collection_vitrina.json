@@ -171,7 +171,11 @@
           "name": "Authorization",
           "value": "Bearer {{token}}"
         }
-      ]
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"idempotencyKey\": \"d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c\"\n}"
+      }
     },
     {
       "_id": "req_posts_put",

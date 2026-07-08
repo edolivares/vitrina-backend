@@ -3,7 +3,29 @@ import { prisma } from "../lib/database.js";
 const MAX_ACTIVE_POSTS = 5;
 const MAX_DRAFT_POSTS = 5;
 
-export const createDraft = async (userId) => {
+/**
+ * Crea un borrador vacío para el usuario.
+ * Si se provee un `idempotencyKey`, primero busca si ya existe un borrador
+ * con esa clave para este usuario y lo devuelve sin crear un duplicado.
+ * Usa un enfoque "optimista": si hay race condition (P2002), recupera el draft existente.
+ *
+ * @param {string} userId - UUID del usuario autenticado.
+ * @param {string|null} idempotencyKey - Clave única generada por el cliente (opcional).
+ * @returns {{ draft: Object, created: boolean }}
+ */
+export const createDraft = async (userId, idempotencyKey = null) => {
+  // Si llega un key, buscar un borrador existente primero (caso normal)
+  if (idempotencyKey) {
+    const existing = await prisma.post.findFirst({
+      where: {
+        userId,
+        idempotencyKey,
+        deletedAt: null,
+      },
+    });
+    if (existing) return { draft: existing, created: false };
+  }
+
   // Límite de 5 borradores activos (status = DRAFT, deletedAt = null)
   const draftCount = await prisma.post.count({
     where: {
@@ -26,21 +48,39 @@ export const createDraft = async (userId) => {
     throw new Error("No hay comunas/ciudades registradas en la base de datos.");
   }
 
-  const newDraft = await prisma.post.create({
-    data: {
-      userId,
-      cityId: defaultCity.id,
-      title: "Sin Título",
-      description: "",
-      price: 0,
-      latitude: defaultCity.latitudeDefault,
-      longitude: defaultCity.longitudeDefault,
-      status: "DRAFT",
-      condition: "USED",
-    },
-  });
+  try {
+    const newDraft = await prisma.post.create({
+      data: {
+        userId,
+        cityId: defaultCity.id,
+        title: "Sin Título",
+        description: "",
+        price: 0,
+        latitude: defaultCity.latitudeDefault,
+        longitude: defaultCity.longitudeDefault,
+        status: "DRAFT",
+        condition: "NEW",
+        idempotencyKey: idempotencyKey || null,
+      },
+    });
 
-  return newDraft;
+    return { draft: newDraft, created: true };
+  } catch (error) {
+    // Race condition: dos requests llegaron casi simultáneamente con el mismo key.
+    // La primera creó el draft; la segunda falla con P2002 (unique constraint).
+    // Recuperamos el draft ya existente y lo devolvemos como si fuera idempotente.
+    if (idempotencyKey && error.code === "P2002") {
+      const existing = await prisma.post.findFirst({
+        where: {
+          userId,
+          idempotencyKey,
+          deletedAt: null,
+        },
+      });
+      if (existing) return { draft: existing, created: false };
+    }
+    throw error;
+  }
 };
 
 export const updatePost = async (postId, userId, data) => {
@@ -105,6 +145,8 @@ export const updatePost = async (postId, userId, data) => {
       longitude: lng,
       condition: data.condition,
       status: data.status,
+      // Limpiar idempotencyKey al publicar: ya no se necesita y libera el slot único
+      ...(data.status === "PUBLISHED" ? { idempotencyKey: null } : {}),
     },
   });
 

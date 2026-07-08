@@ -50,7 +50,17 @@ let mockPostDetails = {
 // Mock del servicio de publicaciones
 vi.mock("../../services/posts.service.js", () => {
   return {
-    createDraft: vi.fn(async (userId) => {
+    createDraft: vi.fn(async (userId, idempotencyKey = null) => {
+      // Si nos pasan idempotencyKey y ya existe un post con ese key, lo retornamos.
+      if (idempotencyKey) {
+        const existing = Object.values(mockPostDetails).find(
+          (p) => p.userId === userId && p.idempotencyKey === idempotencyKey
+        );
+        if (existing) {
+          return { draft: existing, created: false };
+        }
+      }
+
       if (mockDraftCount >= 5) {
         const err = new Error(
           "Has alcanzado el límite de 5 borradores activos. Debes publicar o eliminar algunos antes de poder crear otro."
@@ -73,12 +83,16 @@ vi.mock("../../services/posts.service.js", () => {
         city: { name: "La Serena", region: "Coquimbo" },
         seller: { name: "Test Seller", email: "seller@email.com" },
         gallery: [],
+        idempotencyKey,
       };
       return {
-        id,
-        userId,
-        status: "DRAFT",
-        createdAt: new Date().toISOString(),
+        draft: {
+          id,
+          userId,
+          status: "DRAFT",
+          createdAt: new Date().toISOString(),
+        },
+        created: true,
       };
     }),
     getDetail: vi.fn(async (postId, userId) => {
@@ -434,5 +448,32 @@ describe("Publicaciones REST API (Mocked)", () => {
     expect(resFail.statusCode).toBe(403);
     expect(resFail.body.status).toBe("error");
     expect(resFail.body.message).toContain("límite de 5 borradores activos");
+  });
+
+  it("Debería manejar correctamente el idempotencyKey al crear borradores", async () => {
+    mockDraftCount = 0;
+    mockPostDetails = {};
+    const key = "test-idempotency-key-123";
+
+    // Primera request: Crea un borrador nuevo (201 Created)
+    const res1 = await request(app)
+      .post("/api/posts/draft")
+      .send({ idempotencyKey: key })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res1.statusCode).toBe(201);
+    expect(res1.body.status).toBe("success");
+    expect(res1.body.data.id).toBeDefined();
+    const firstId = res1.body.data.id;
+
+    // Segunda request con el mismo key: Devuelve el existente (200 OK)
+    const res2 = await request(app)
+      .post("/api/posts/draft")
+      .send({ idempotencyKey: key })
+      .set("Authorization", `Bearer ${token}`);
+
+    expect(res2.statusCode).toBe(200);
+    expect(res2.body.status).toBe("success");
+    expect(res2.body.data.id).toBe(firstId);
   });
 });

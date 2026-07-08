@@ -2706,6 +2706,7 @@ async function main() {
         latitude: lat,
         longitude: lng,
         status: "PUBLISHED",
+        idempotencyKey: null, // Posts publicados no necesitan idempotency key
       },
       create: {
         id: p.id,
@@ -2718,6 +2719,7 @@ async function main() {
         latitude: lat,
         longitude: lng,
         status: "PUBLISHED",
+        idempotencyKey: null, // Posts publicados no necesitan idempotency key
       },
     });
 
@@ -2763,6 +2765,79 @@ async function main() {
     }
   }
   console.log(" Publicaciones y fotos asociadas creadas exitosamente.");
+
+  const reviews = [
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a",
+      sellerId: "d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Diego
+      buyerId: "f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Paula
+      postId: "1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 5,
+      comment: "Muy buena comunicación y entrega rápida. El producto estaba tal como se describía.",
+      createdAt: new Date("2026-06-20T12:00:00.000Z"),
+    },
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b",
+      sellerId: "d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Diego
+      buyerId: "e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Rodrigo
+      postId: "1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 5,
+      comment: "Vendedor confiable, respondió rápido y coordinó sin problemas.",
+      createdAt: new Date("2026-06-12T12:00:00.000Z"),
+    },
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8c",
+      sellerId: "e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Rodrigo
+      buyerId: "d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Diego
+      postId: "2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 4,
+      comment: "Buena experiencia general. La publicación tenía información clara.",
+      createdAt: new Date("2026-05-28T12:00:00.000Z"),
+    },
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8d",
+      sellerId: "e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Rodrigo
+      buyerId: "f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Paula
+      postId: "2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 5,
+      comment: "Todo impecable, flexible para coordinar y muy amable durante la entrega.",
+      createdAt: new Date("2026-05-18T12:00:00.000Z"),
+    },
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8e",
+      sellerId: "f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Paula
+      buyerId: "d9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Diego
+      postId: "3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 5,
+      comment: "La mesa estaba nueva y muy bien embalada. Excelente atención.",
+      createdAt: new Date("2026-06-04T12:00:00.000Z"),
+    },
+    {
+      id: "8a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      sellerId: "f9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Paula
+      buyerId: "e9b3a4f6-8c1d-4b5a-90e8-0d1e2f3a4b5c", // Rodrigo
+      postId: "3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      rating: 4,
+      comment: "Producto muy bonito y fiel a las fotos. La coordinación fue rápida.",
+      createdAt: new Date("2026-05-22T12:00:00.000Z"),
+    },
+  ];
+
+  for (const review of reviews) {
+    await prisma.review.upsert({
+      where: { id: review.id },
+      update: {
+        sellerId: review.sellerId,
+        buyerId: review.buyerId,
+        postId: review.postId,
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt,
+      },
+      create: review,
+    });
+  }
+  console.log(" Reseñas ficticias creadas.");
 }
 
 main()
