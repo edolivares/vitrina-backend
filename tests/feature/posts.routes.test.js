@@ -139,7 +139,7 @@ vi.mock("../../services/posts.service.js", () => {
         createdAt: new Date().toISOString(),
       }));
     }),
-    archivePost: vi.fn(async (postId, userId) => {
+    archivePost: vi.fn(async (postId, _userId) => {
       const post = mockPostDetails[postId];
       if (!post) {
         const err = new Error("Publicación no encontrada");
@@ -153,7 +153,7 @@ vi.mock("../../services/posts.service.js", () => {
         updatedAt: new Date().toISOString(),
       };
     }),
-    reactivatePost: vi.fn(async (postId, userId) => {
+    reactivatePost: vi.fn(async (postId, _userId) => {
       const post = mockPostDetails[postId];
       if (!post) {
         const err = new Error("Publicación no encontrada");
@@ -167,7 +167,7 @@ vi.mock("../../services/posts.service.js", () => {
         updatedAt: new Date().toISOString(),
       };
     }),
-    deletePost: vi.fn(async (postId, userId) => {
+    deletePost: vi.fn(async (postId, _userId) => {
       const post = mockPostDetails[postId];
       if (!post) {
         const err = new Error("Publicación no encontrada");

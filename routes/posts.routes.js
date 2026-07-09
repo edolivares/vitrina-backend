@@ -248,7 +248,7 @@ router.get("/:id", validateParams(uuidParamSchema), async (req, res, next) => {
           const decoded = jwt.verify(token, config.jwt.secret);
           userId = decoded.id;
         }
-      } catch (err) {
+      } catch {
         // Ignorar error para permitir ver publicaciones públicas
       }
     }

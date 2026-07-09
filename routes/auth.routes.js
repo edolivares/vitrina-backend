@@ -35,7 +35,7 @@ const clearRefreshTokenCookie = (res) => {
   });
 };
 
-router.post("/register", validateBody(registerSchema), async (req, res, next) => {
+router.post("/register", validateBody(registerSchema), async (req, res, _next) => {
   try {
     const newUser = await registerUser(req.validatedBody);
     res.status(201).json({
@@ -51,7 +51,7 @@ router.post("/register", validateBody(registerSchema), async (req, res, next) =>
   }
 });
 
-router.post("/login", validateBody(loginSchema), async (req, res, next) => {
+router.post("/login", validateBody(loginSchema), async (req, res, _next) => {
   try {
     const result = await loginUser(req.validatedBody);
     setRefreshTokenCookie(res, result.refreshToken);
@@ -68,7 +68,7 @@ router.post("/login", validateBody(loginSchema), async (req, res, next) => {
   }
 });
 
-router.post("/refresh", async (req, res, next) => {
+router.post("/refresh", async (req, res, _next) => {
   try {
     const result = await refreshAccessToken(req.cookies?.[config.jwt.refreshCookieName]);
     res.status(200).json({
@@ -97,7 +97,7 @@ router.post("/logout", async (req, res, next) => {
   }
 });
 
-router.get("/me", authMiddleware, async (req, res, next) => {
+router.get("/me", authMiddleware, async (req, res, _next) => {
   try {
     const profile = await getUserProfile(req.user.id);
     res.status(200).json({
@@ -112,7 +112,7 @@ router.get("/me", authMiddleware, async (req, res, next) => {
   }
 });
 
-router.put("/me", authMiddleware, validateBody(updateProfileSchema), async (req, res, next) => {
+router.put("/me", authMiddleware, validateBody(updateProfileSchema), async (req, res, _next) => {
   try {
     const updated = await updateUserProfile(req.user.id, req.validatedBody);
     res.status(200).json({
@@ -127,7 +127,7 @@ router.put("/me", authMiddleware, validateBody(updateProfileSchema), async (req,
   }
 });
 
-router.post("/me/avatar", authMiddleware, async (req, res, next) => {
+router.post("/me/avatar", authMiddleware, async (req, res, _next) => {
   try {
     const parsed = await parseMultipart(req, { maxBytes: config.media.avatarMaxFileSizeBytes });
     const file = parsed.files.file;

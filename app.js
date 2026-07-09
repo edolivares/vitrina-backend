@@ -119,7 +119,7 @@ app.use((req, res) => {
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   const statusCode = err.statusCode || 500;
   if (statusCode === 500) {
     console.error(err.stack);

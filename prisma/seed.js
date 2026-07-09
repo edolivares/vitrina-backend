@@ -2545,7 +2545,6 @@ async function main() {
   });
   console.log(` Sembrado de ciudades finalizado. Se insertaron ${citiesData.length} comunas.`);
 
-
   console.log(" Iniciando sembrado de usuarios ficticios y sus publicaciones...");
   const passwordHash = await bcrypt.hash("password123", 10);
 
