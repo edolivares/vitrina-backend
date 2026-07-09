@@ -5,6 +5,12 @@ import { promises as fs } from "fs";
 import path from "path";
 const prisma = new PrismaClient();
 
+const storageBaseUrl =
+  process.env.CDN_BASE_URL ||
+  (process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}/storage`
+    : `http://localhost:${Number(process.env.PORT) || 4000}/storage`);
+
 const regionsData = [
   {
     id: 1,
@@ -2524,85 +2530,70 @@ const citiesData = [
 
 async function main() {
   console.log(" Iniciando sembrado (seeding) de regiones estáticas en la base de datos...");
-  for (const r of regionsData) {
-    await prisma.region.upsert({
-      where: { id: r.id },
-      update: {
-        name: r.name,
-        shortName: r.shortName,
-        romanNumber: r.romanNumber,
-      },
-      create: {
-        id: r.id,
-        name: r.name,
-        shortName: r.shortName,
-        romanNumber: r.romanNumber,
-      },
-    });
-  }
+  await prisma.region.createMany({ data: regionsData, skipDuplicates: true });
   console.log(" Regiones sembradas exitosamente.");
 
-  for (const c of citiesData) {
-    await prisma.city.upsert({
-      where: { id: c.id },
-      update: {},
-      create: {
-        id: c.id,
-        regionId: c.regionId,
-        name: c.name,
-        latitudeDefault: c.latitudeDefault,
-        longitudeDefault: c.longitudeDefault,
-      },
-    });
-  }
+  await prisma.city.createMany({
+    data: citiesData.map((c) => ({
+      id: c.id,
+      regionId: c.regionId,
+      name: c.name,
+      latitudeDefault: c.latitudeDefault,
+      longitudeDefault: c.longitudeDefault,
+    })),
+    skipDuplicates: true,
+  });
   console.log(` Sembrado de ciudades finalizado. Se insertaron ${citiesData.length} comunas.`);
+
 
   console.log(" Iniciando sembrado de usuarios ficticios y sus publicaciones...");
   const passwordHash = await bcrypt.hash("password123", 10);
 
   // Helper to copy local seed assets to the storage directory and generate a WebP blur placeholder
   async function copySeedImageAsset(postId, mediaId) {
-    try {
-      const fileName = `${mediaId}.webp`;
-      const sourcePath = path.resolve("./prisma/seed-assets/posts", postId, fileName);
-      const destDir = path.resolve("./storage/media/posts", postId);
-      const destPath = path.join(destDir, fileName);
+    if (process.env.NODE_ENV === "development" || !process.env.NODE_ENV) {
+      try {
+        const fileName = `${mediaId}.webp`;
+        const sourcePath = path.resolve("./prisma/seed-assets/posts", postId, fileName);
+        const destDir = path.resolve("./storage/media/posts", postId);
+        const destPath = path.join(destDir, fileName);
 
-      // Create target directory
-      await fs.mkdir(destDir, { recursive: true });
+        // Create target directory
+        await fs.mkdir(destDir, { recursive: true });
 
-      // Copy file
-      await fs.copyFile(sourcePath, destPath);
+        // Copy file
+        await fs.copyFile(sourcePath, destPath);
 
-      // Get file size
-      const stats = await fs.stat(destPath);
+        // Get file size
+        const stats = await fs.stat(destPath);
 
-      // Read file and generate a tiny WebP blur placeholder (20x20)
-      const fileBuffer = await fs.readFile(sourcePath);
-      const placeholderBuffer = await sharp(fileBuffer)
-        .resize(20, 20, { fit: "inside" })
-        .webp({ quality: 20 })
-        .toBuffer();
+        // Read file and generate a tiny WebP blur placeholder (20x20)
+        const fileBuffer = await fs.readFile(sourcePath);
+        const placeholderBuffer = await sharp(fileBuffer)
+          .resize(20, 20, { fit: "inside" })
+          .webp({ quality: 20 })
+          .toBuffer();
 
-      const placeholderBase64 = `data:image/webp;base64,${placeholderBuffer.toString("base64")}`;
+        const placeholderBase64 = `data:image/webp;base64,${placeholderBuffer.toString("base64")}`;
 
-      return {
-        url: `http://localhost:4000/storage/media/posts/${postId}/${fileName}`,
-        path: `posts/${postId}/${fileName}`,
-        placeholder: placeholderBase64,
-        size: stats.size,
-      };
-    } catch (err) {
-      console.error(
-        ` Error al copiar/procesar imagen local del seed para mediaId ${mediaId}:`,
-        err
-      );
-      return {
-        url: `http://localhost:4000/storage/media/posts/${postId}/${mediaId}.webp`,
-        path: `posts/${postId}/${mediaId}.webp`,
-        placeholder: null,
-        size: 0,
-      };
+        return {
+          url: `${storageBaseUrl}/media/posts/${postId}/${fileName}`,
+          path: `posts/${postId}/${fileName}`,
+          placeholder: placeholderBase64,
+          size: stats.size,
+        };
+      } catch (err) {
+        console.error(
+          ` Error al copiar/procesar imagen local del seed para mediaId ${mediaId}:`,
+          err
+        );
+        return {
+          url: `${storageBaseUrl}/media/posts/${postId}/${mediaId}.webp`,
+          path: `posts/${postId}/${mediaId}.webp`,
+          placeholder: null,
+          size: 0,
+        };
+      }
     }
   }
 
@@ -2725,8 +2716,16 @@ async function main() {
 
     let sortOrder = 0;
     for (const img of p.images) {
-      // Copy asset file physically
-      const savedMedia = await copySeedImageAsset(p.id, img.mediaId);
+      // En desarrollo: copia la imagen físicamente. En producción: solo genera las rutas (las imágenes se suben a S3 manualmente)
+      const savedMedia =
+        process.env.NODE_ENV === "development"
+          ? await copySeedImageAsset(p.id, img.mediaId)
+          : {
+              url: `${storageBaseUrl}/media/posts/${p.id}/${img.mediaId}.webp`,
+              path: `posts/${p.id}/${img.mediaId}.webp`,
+              placeholder: null,
+              size: 0,
+            };
 
       // Crear media
       await prisma.media.upsert({

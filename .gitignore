@@ -30,6 +30,11 @@ desktop.ini
 .env.test.local
 .env.production.local
 .env.*.local
+.env.production
+.env.development
+.env.test
+.env.local
+
 
 # User uploads (dynamic media files)
 uploads/
