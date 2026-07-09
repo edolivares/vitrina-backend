@@ -59,6 +59,10 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    optionalDependencies:
+      '@img/sharp-linux-x64':
+        specifier: ^0.33.5
+        version: 0.33.5
     devDependencies:
       '@eslint/js':
         specifier: ^10.0.1
@@ -90,10 +94,6 @@ importers:
       vitest:
         specifier: ^3.2.6
         version: 3.2.6(@types/node@26.1.0)(jiti@2.7.0)(supports-color@5.5.0)
-    optionalDependencies:
-      '@img/sharp-linux-x64':
-        specifier: ^0.33.5
-        version: 0.33.5
 
 packages:
 
