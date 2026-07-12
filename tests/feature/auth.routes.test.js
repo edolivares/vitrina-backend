@@ -241,6 +241,31 @@ describe("Autenticación y Usuarios REST API (Mocked)", () => {
     expect(res.body.data.name).toBe("Juan Actualizado");
   });
 
+  it("Debería rechazar cambios de correo desde la edición de perfil", async () => {
+    const res = await request(app)
+      .put("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        name: "Juan Actualizado",
+        email: "otro@email.com",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.status).toBe("error");
+  });
+
+  it("Debería rechazar una bio con más de cinco líneas", async () => {
+    const res = await request(app)
+      .put("/api/auth/me")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        bio: "Línea 1\nLínea 2\nLínea 3\nLínea 4\nLínea 5\nLínea 6",
+      });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.status).toBe("error");
+  });
+
   it("Debería subir avatar y devolver placeholder base64", async () => {
     const res = await request(app)
       .post("/api/auth/me/avatar")

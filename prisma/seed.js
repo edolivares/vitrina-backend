@@ -2679,6 +2679,57 @@ async function main() {
     },
   ];
 
+  const seedMediaMetadata = {
+    "1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a": {
+      placeholder:
+        "data:image/webp;base64,UklGRlgAAABXRUJQVlA4IEwAAACQAwCdASoUAA0APzmEuVOvKKWisAgB4CcJQBdgA23Dvg9W8bAAAP6f2JfGo52cjZbh3XwXPDx60eHxx20o76cSkZ2J1OineDCmTgAA",
+      width: 800,
+      height: 533,
+      size: 12848,
+      mimeType: "image/webp",
+    },
+    "1a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b": {
+      placeholder:
+        "data:image/webp;base64,UklGRowAAABXRUJQVlA4IIAAAACwAwCdASoUAA0APzmEuVOvKKWisAgB4CcJbACdEyAAI1Ah8gyhQAD33xYWcJUcW+BZzsZJSBVJPL13X6GQnAUIi96taqxqA8EYH6O3sbiBy4jZOuuxsM5QOcxwpxYRCI1nsV5N3atWPMHb2t7wG/FRTt3k3Lnf+TNmhJhregAAAA==",
+      width: 800,
+      height: 533,
+      size: 28988,
+      mimeType: "image/webp",
+    },
+    "2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a": {
+      placeholder:
+        "data:image/webp;base64,UklGRlIAAABXRUJQVlA4IEYAAACQAwCdASoUAA0APzmGulQvKSWjMAgB4CcJZwCw7CHfeOco3mCAAP65HcsX0PipMtxiBcUOysZP3VKp1b3vvoCRFjmO9YAA",
+      width: 800,
+      height: 533,
+      size: 36866,
+      mimeType: "image/webp",
+    },
+    "2a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b": {
+      placeholder:
+        "data:image/webp;base64,UklGRj4AAABXRUJQVlA4IDIAAADQAgCdASoUAA4APzmIulQ0qSWjMAgCkCcJaQAAfj4AAP7r9iIiHpxWkJGVOA6GOpbwAA==",
+      width: 800,
+      height: 565,
+      size: 17010,
+      mimeType: "image/webp",
+    },
+    "3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8a": {
+      placeholder:
+        "data:image/webp;base64,UklGRkQAAABXRUJQVlA4IDgAAABQAwCdASoUAA0APzmGuVOvKSWkMAgB4CcJaQAAW+qYXHK6AAD+Ur3TJitETZTx5aVOhcA24oAAAA==",
+      width: 800,
+      height: 534,
+      size: 7158,
+      mimeType: "image/webp",
+    },
+    "3a3d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8b": {
+      placeholder:
+        "data:image/webp;base64,UklGRmgAAABXRUJQVlA4IFwAAACwAwCdASoUAA0APzmEulOvKKWisAgB4CcJZwAAW/F8CKsEJZMwAAD+w4GCGtjx8aY5pNyS4Kna56KvHNIIm9RenTNQ67wx/os+kUSzhPYGiMBmBePpFAKZogAAAA==",
+      width: 800,
+      height: 533,
+      size: 46978,
+      mimeType: "image/webp",
+    },
+  };
+
   for (const p of posts) {
     const city = citiesData.find((c) => c.id === p.cityId);
     const lat = city ? city.latitudeDefault : null;
@@ -2716,15 +2767,24 @@ async function main() {
     let sortOrder = 0;
     for (const img of p.images) {
       // En desarrollo: copia la imagen físicamente. En producción: solo genera las rutas (las imágenes se suben a S3 manualmente)
-      const savedMedia =
+      const metadata = seedMediaMetadata[img.mediaId];
+      const rawSavedMedia =
         process.env.NODE_ENV === "development"
           ? await copySeedImageAsset(p.id, img.mediaId)
           : {
               url: `${storageBaseUrl}/media/posts/${p.id}/${img.mediaId}.webp`,
               path: `posts/${p.id}/${img.mediaId}.webp`,
-              placeholder: null,
-              size: 0,
+              placeholder: metadata?.placeholder ?? null,
+              size: metadata?.size ?? 0,
             };
+      const savedMedia = {
+        ...rawSavedMedia,
+        placeholder: rawSavedMedia.placeholder ?? metadata?.placeholder ?? null,
+        width: metadata?.width ?? null,
+        height: metadata?.height ?? null,
+        size: rawSavedMedia.size || metadata?.size || 0,
+        mimeType: metadata?.mimeType ?? "image/webp",
+      };
 
       // Crear media
       await prisma.media.upsert({
@@ -2733,7 +2793,10 @@ async function main() {
           url: savedMedia.url,
           path: savedMedia.path,
           placeholder: savedMedia.placeholder,
+          width: savedMedia.width,
+          height: savedMedia.height,
           size: savedMedia.size,
+          mimeType: savedMedia.mimeType,
         },
         create: {
           id: img.mediaId,
@@ -2741,8 +2804,10 @@ async function main() {
           url: savedMedia.url,
           path: savedMedia.path,
           placeholder: savedMedia.placeholder,
+          width: savedMedia.width,
+          height: savedMedia.height,
           size: savedMedia.size,
-          mimeType: "image/webp",
+          mimeType: savedMedia.mimeType,
           context: "POST",
         },
       });

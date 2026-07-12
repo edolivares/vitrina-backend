@@ -175,10 +175,9 @@ export const getUserProfile = async (userId) => {
   };
 };
 
-export const updateUserProfile = async (userId, { name, email, bio, avatarId }) => {
+export const updateUserProfile = async (userId, { name, bio, avatarId }) => {
   const updateData = {};
   if (name !== undefined) updateData.name = name;
-  if (email !== undefined) updateData.email = email;
   if (bio !== undefined) updateData.bio = bio;
   if (avatarId !== undefined) {
     if (avatarId !== null) {
