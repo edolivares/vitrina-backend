@@ -37,7 +37,7 @@
     "morgan": "^1.10.0",
     "prisma": "^6.2.1",
     "pusher": "^5.3.4",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.3",
     "swagger-ui-express": "^5.0.1",
     "zod": "^3.24.1"
   },
@@ -54,7 +54,7 @@
     "vitest": "^3.2.6"
   },
   "optionalDependencies": {
-    "@img/sharp-linux-x64": "^0.33.5"
+    "@img/sharp-linux-x64": "^0.35.3"
   },
   "engines": {
     "node": "24.x"
