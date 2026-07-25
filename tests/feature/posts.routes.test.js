@@ -3,6 +3,7 @@ import request from "supertest";
 import jwt from "jsonwebtoken";
 import app from "../../app.js";
 import { config } from "../../lib/config.js";
+import { listPublished } from "../../services/posts.service.js";
 
 // Interceptar lib/database.js para evitar que se importe/inicie el Prisma Client real
 vi.mock("../../lib/database.js", () => ({
@@ -475,5 +476,37 @@ describe("Publicaciones REST API (Mocked)", () => {
     expect(res2.statusCode).toBe(200);
     expect(res2.body.status).toBe("success");
     expect(res2.body.data.id).toBe(firstId);
+  });
+
+  it("Debería aceptar parámetros de filtro por radio geográfico (radius, lat, lng)", async () => {
+    const res = await request(app)
+      .get("/api/posts")
+      .query({ radius: "50", lat: "-33.4489", lng: "-70.6693" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(listPublished).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        radius: "50",
+        lat: "-33.4489",
+        lng: "-70.6693",
+      })
+    );
+  });
+
+  it("Debería reenviar originCityId como origen separado del filtro regional", async () => {
+    const res = await request(app)
+      .get("/api/posts")
+      .query({ regionId: "13", originCityId: "13101", radius: "50" });
+
+    expect(res.statusCode).toBe(200);
+    expect(listPublished).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        regionId: "13",
+        originCityId: "13101",
+        radius: "50",
+      })
+    );
   });
 });

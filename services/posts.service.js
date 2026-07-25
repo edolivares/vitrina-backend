@@ -1,4 +1,5 @@
 import { prisma } from "../lib/database.js";
+import { calculateDistanceKm } from "../lib/geo.js";
 
 const MAX_ACTIVE_POSTS = 5;
 const MAX_DRAFT_POSTS = 5;
@@ -157,12 +158,16 @@ export const listPublished = async (filters = {}) => {
   const {
     search,
     cityId,
+    originCityId,
     regionId,
     region,
     comuna,
     minPrice,
     maxPrice,
     condition,
+    radius,
+    lat,
+    lng,
     limit = 20,
     offset = 0,
   } = filters;
@@ -179,21 +184,92 @@ export const listPublished = async (filters = {}) => {
     ];
   }
 
-  if (cityId) {
-    whereClause.cityId = Number(cityId);
-  } else if (regionId) {
-    whereClause.city = { regionId: Number(regionId) };
-  } else if (comuna) {
-    whereClause.city = { name: { equals: comuna, mode: "insensitive" } };
-  } else if (region) {
-    whereClause.city = {
-      region: {
-        OR: [
-          { name: { equals: region, mode: "insensitive" } },
-          { shortName: { equals: region, mode: "insensitive" } },
-        ],
-      },
-    };
+  const radiusProvided = radius !== undefined && radius !== "";
+  const numericRadius = radiusProvided ? Number(radius) : null;
+  let filterByDistance = false;
+  let originLat = null;
+  let originLng = null;
+
+  if (radiusProvided) {
+    if (!Number.isFinite(numericRadius) || numericRadius <= 0 || numericRadius > 500) {
+      const err = new Error("El radio debe ser un número entre 1 y 500 kilómetros");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const hasLat = lat !== undefined && lat !== "";
+    const hasLng = lng !== undefined && lng !== "";
+
+    if (hasLat !== hasLng) {
+      const err = new Error("Debes enviar latitud y longitud para usar tu ubicación");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (hasLat && hasLng) {
+      originLat = Number(lat);
+      originLng = Number(lng);
+
+      if (
+        !Number.isFinite(originLat) ||
+        !Number.isFinite(originLng) ||
+        originLat < -90 ||
+        originLat > 90 ||
+        originLng < -180 ||
+        originLng > 180
+      ) {
+        const err = new Error("Las coordenadas enviadas no son válidas");
+        err.statusCode = 400;
+        throw err;
+      }
+    } else if (originCityId) {
+      const numericOriginCityId = Number(originCityId);
+      if (!Number.isInteger(numericOriginCityId) || numericOriginCityId <= 0) {
+        const err = new Error("La comuna de origen no es válida");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const city = await prisma.city.findUnique({
+        where: { id: numericOriginCityId },
+      });
+
+      if (!city) {
+        const err = new Error("La comuna de origen no existe");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      originLat = Number(city.latitudeDefault);
+      originLng = Number(city.longitudeDefault);
+    } else {
+      const err = new Error(
+        "Debes seleccionar una comuna o usar tu ubicación para aplicar un radio"
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    filterByDistance = true;
+  }
+
+  if (!filterByDistance) {
+    if (cityId) {
+      whereClause.cityId = Number(cityId);
+    } else if (regionId) {
+      whereClause.city = { regionId: Number(regionId) };
+    } else if (comuna) {
+      whereClause.city = { name: { equals: comuna, mode: "insensitive" } };
+    } else if (region) {
+      whereClause.city = {
+        region: {
+          OR: [
+            { name: { equals: region, mode: "insensitive" } },
+            { shortName: { equals: region, mode: "insensitive" } },
+          ],
+        },
+      };
+    }
   }
 
   if (minPrice !== undefined && minPrice !== "") {
@@ -217,8 +293,7 @@ export const listPublished = async (filters = {}) => {
   const posts = await prisma.post.findMany({
     where: whereClause,
     orderBy: { createdAt: "desc" },
-    skip: Number(offset),
-    take: Number(limit),
+    ...(filterByDistance ? {} : { skip: Number(offset), take: Number(limit) }),
     include: {
       city: true,
       media: {
@@ -229,7 +304,29 @@ export const listPublished = async (filters = {}) => {
     },
   });
 
-  return posts.map((post) => {
+  let filteredPosts = posts;
+
+  if (filterByDistance) {
+    filteredPosts = posts.filter((post) => {
+      const postLat =
+        post.latitude !== null && post.latitude !== undefined
+          ? Number(post.latitude)
+          : Number(post.city?.latitudeDefault);
+      const postLng =
+        post.longitude !== null && post.longitude !== undefined
+          ? Number(post.longitude)
+          : Number(post.city?.longitudeDefault);
+
+      const distance = calculateDistanceKm(originLat, originLng, postLat, postLng);
+      return distance <= numericRadius;
+    });
+
+    const start = Number(offset);
+    const end = start + Number(limit);
+    filteredPosts = filteredPosts.slice(start, end);
+  }
+
+  return filteredPosts.map((post) => {
     const coverMedia = post.media[0]?.media;
     return {
       id: post.id,

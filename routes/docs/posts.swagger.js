@@ -11,7 +11,31 @@ export const postPaths = {
           description: "Búsqueda por palabra clave",
         },
         { name: "cityId", in: "query", schema: { type: "integer" }, description: "ID de comuna" },
+        {
+          name: "originCityId",
+          in: "query",
+          schema: { type: "integer" },
+          description: "ID de la comuna usada como centro del radio de búsqueda",
+        },
         { name: "regionId", in: "query", schema: { type: "integer" }, description: "ID de región" },
+        {
+          name: "radius",
+          in: "query",
+          schema: { type: "number", minimum: 1, maximum: 500 },
+          description: "Radio en kilómetros; requiere originCityId o el par lat/lng",
+        },
+        {
+          name: "lat",
+          in: "query",
+          schema: { type: "number", minimum: -90, maximum: 90 },
+          description: "Latitud del usuario cuando se usa ubicación GPS",
+        },
+        {
+          name: "lng",
+          in: "query",
+          schema: { type: "number", minimum: -180, maximum: 180 },
+          description: "Longitud del usuario cuando se usa ubicación GPS",
+        },
         { name: "minPrice", in: "query", schema: { type: "number" }, description: "Precio mínimo" },
         { name: "maxPrice", in: "query", schema: { type: "number" }, description: "Precio máximo" },
         {
@@ -36,6 +60,9 @@ export const postPaths = {
       responses: {
         200: {
           description: "Galería de publicaciones",
+        },
+        400: {
+          description: "Filtro geográfico inválido o radio sin origen",
         },
       },
     },

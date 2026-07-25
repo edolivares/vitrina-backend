@@ -77,12 +77,16 @@ router.get("/", async (req, res, next) => {
     const posts = await listPublished({
       search: req.query.search,
       cityId: req.query.cityId,
+      originCityId: req.query.originCityId,
       regionId: req.query.regionId,
       region: req.query.region,
       comuna: req.query.comuna,
       minPrice: req.query.minPrice,
       maxPrice: req.query.maxPrice,
       condition: req.query.condition,
+      radius: req.query.radius,
+      lat: req.query.lat,
+      lng: req.query.lng,
       limit: req.query.limit,
       offset: req.query.offset,
     });
