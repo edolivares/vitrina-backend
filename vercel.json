@@ -1,4 +1,5 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
   "buildCommand": "pnpm run build",
   "builds": [
@@ -17,6 +18,16 @@
     {
       "src": "/(.*)",
       "dest": "index.js"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/internal/cleanup-media/summer",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/internal/cleanup-media/winter",
+      "schedule": "0 4 * * *"
     }
   ]
 }

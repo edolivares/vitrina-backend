@@ -24,6 +24,7 @@ import savedRoutes from "./routes/saved.routes.js";
 import messageRoutes from "./routes/messages.routes.js";
 import profileRoutes from "./routes/profiles.routes.js";
 import realtimeRoutes from "./routes/realtime.routes.js";
+import internalRoutes from "./routes/internal.routes.js";
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use(["/api/saved-posts", "/api/saved"], privateWriteRateLimiter);
 app.use("/api/chats", privateWriteRateLimiter);
 app.use("/api/auth/me", privateWriteRateLimiter);
 app.use("/api/auth", authRoutes);
+app.use("/api/internal", internalRoutes);
 app.use("/api/realtime", realtimeRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/posts", postRoutes);

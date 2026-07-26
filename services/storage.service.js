@@ -18,6 +18,12 @@ const normalizeStoragePath = (filePath) => {
   return normalizedPath;
 };
 
+export const assertDeleteObjectsSucceeded = (result) => {
+  if (result.Errors?.length) {
+    throw new Error(`S3 no pudo eliminar ${result.Errors.length} archivo(s)`);
+  }
+};
+
 export class S3StorageService {
   constructor() {
     const { accessKeyId, secretAccessKey, region, endpoint } = config.s3;
@@ -58,7 +64,7 @@ export class S3StorageService {
   async deleteFiles(filePaths, bucket = config.storage.bucket) {
     if (!filePaths.length) return;
 
-    await this.client.send(
+    const result = await this.client.send(
       new DeleteObjectsCommand({
         Bucket: bucket,
         Delete: {
@@ -67,6 +73,8 @@ export class S3StorageService {
         },
       })
     );
+
+    assertDeleteObjectsSucceeded(result);
   }
 
   async fileExists(filePath, bucket = config.storage.bucket) {
